@@ -1,14 +1,14 @@
 package com.akbo.auth.dto;
 
-import java.time.Instant;
-import java.util.UUID;
+import java.time.LocalDateTime;
+
 import lombok.Data;
 
 @Data
 public class AbstractDto {
-    private UUID id;
-    private Instant createdTime;
-    private Instant updatedInstant;
+    private Long id;
+    private LocalDateTime createdTime;
+    private LocalDateTime lastUpdatedTime;
     private String createdBy;
-    private String UpdatedBy;
+    private String lastUpdatedBy;
 }

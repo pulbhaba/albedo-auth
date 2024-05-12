@@ -8,9 +8,6 @@ project.buildDir = "$projectDir/build"
 group = 'com.akbo.auth'
 
 allprojects {
-	java {
-		sourceCompatibility = '11'
-	}
 	repositories {
 		maven() {
 			url = uri("https://plugins.gradle.org/m2/")

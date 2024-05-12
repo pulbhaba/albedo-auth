@@ -1,11 +1,12 @@
 package com.akbo.auth.api.service.impl;
 
-import java.util.List;
+import java.util.Objects;
 
+import org.apache.coyote.BadRequestException;
 import org.modelmapper.ModelMapper;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.akbo.auth.api.service.UserService;
@@ -19,110 +20,64 @@ import lombok.RequiredArgsConstructor;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-
+    private final PasswordEncoder passwordEncoder;
     private final ModelMapper modelMapper;
 
     @Override
     public UserDto createUser(final UserDto user) {
-        final UserDto createdUser = modelMapper.map(
-                userRepository.save(modelMapper.map(user, User.class)),
-                UserDto.class);
-        return createdUser;
+        final User existingUser;
+        // early exit
+        if (Objects.nonNull(user.getId()))
+            existingUser = userRepository.findById(user.getId()).orElse(null);
+        else
+            existingUser = userRepository.findByUsername(user.getUsername()).orElse(null);
+
+        if (Objects.nonNull(existingUser))
+            return modelMapper.map(existingUser, UserDto.class);
+        ;
+
+        final User newUser = modelMapper.map(user, User.class);
+        newUser.setPassword(passwordEncoder.encode(user.getPassword()));
+        final User savedUser = userRepository.save(newUser);
+
+        return modelMapper.map(savedUser, UserDto.class);
     }
 
     @Override
-    public void createUser(UserDetails user) {
+    public void createUser(final UserDetails user) {
         createUser(modelMapper.map(user, UserDto.class));
     }
 
     @Override
-    public void updateUser(UserDetails user) {
-        userRepository.save((User)user);
+    public void updateUser(final UserDetails user) {
+        userRepository.save((User) user);
     }
 
     @Override
-    public void deleteUser(String username) {
-        final User userFound = userRepository.findByUsername(username);
-       userRepository.deleteById(userFound.getId());
+    public void deleteUser(final String username) {
+        userRepository.findByUsername(username)
+                .ifPresentOrElse(user -> userRepository.deleteById(user.getId()),
+                        () -> new BadRequestException("The user does not exist in the system"));
     }
 
     @Override
-    public void changePassword(String oldPassword, String newPassword) {
+    public void changePassword(final String oldPassword, final String newPassword) {
     }
 
     @Override
-    public boolean userExists(String username) {
+    public boolean userExists(final String username) {
         return false;
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return userRepository.findByUsername(username);
-    }
-
-    @Override
-    public List<String> findAllGroups() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findAllGroups'");
-    }
-
-    @Override
-    public List<String> findUsersInGroup(String groupName) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findUsersInGroup'");
-    }
-
-    @Override
-    public void createGroup(String groupName, List<GrantedAuthority> authorities) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'createGroup'");
-    }
-
-    @Override
-    public void deleteGroup(String groupName) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'deleteGroup'");
-    }
-
-    @Override
-    public void renameGroup(String oldName, String newName) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'renameGroup'");
-    }
-
-    @Override
-    public void addUserToGroup(String username, String group) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'addUserToGroup'");
-    }
-
-    @Override
-    public void removeUserFromGroup(String username, String groupName) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'removeUserFromGroup'");
-    }
-
-    @Override
-    public List<GrantedAuthority> findGroupAuthorities(String groupName) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findGroupAuthorities'");
-    }
-
-    @Override
-    public void addGroupAuthority(String groupName, GrantedAuthority authority) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'addGroupAuthority'");
-    }
-
-    @Override
-    public void removeGroupAuthority(String groupName, GrantedAuthority authority) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'removeGroupAuthority'");
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("The username was not found in the system"));
     }
 
     @Override
     public UserDto getUser(String username) {
-        final UserDto user = modelMapper.map((User)loadUserByUsername(username), UserDto.class);
+        final UserDto user = modelMapper.map((User) loadUserByUsername(username), UserDto.class);
         return user;
     }
 }

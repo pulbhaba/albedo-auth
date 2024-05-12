@@ -2,6 +2,10 @@ plugins {
 	id 'java-library'
 }
 
+java {
+	sourceCompatibility = '11'
+}
+
 dependencies {
 	implementation project(":auth-client")
 	api 'org.springframework.boot:spring-boot-starter-security:2.7.18'

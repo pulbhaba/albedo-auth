@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 public class AppBasicAuthenticationEntryPoint extends BasicAuthenticationEntryPoint {
     @Override
     public void afterPropertiesSet() {
-        setRealmName("Baeldung");
+        setRealmName("Albedo");
         super.afterPropertiesSet();
     }
 }

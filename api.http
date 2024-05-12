@@ -1,0 +1,27 @@
+###
+GET http://localhost:8080/public/
+
+###
+GET http://localhost:8080/auth/
+
+###
+POST http://localhost:8080/admin/user/
+Content-Type: application/json
+
+{
+    "username": "admin",
+    "firstName": "Super",
+    "lastName": "Admin",
+    "enabled": true,
+    "password": "admin"
+}
+
+
+###
+GET http://localhost:8080/admin/user/admin
+Content-Type: application/json
+
+
+
+###
+GET http://localhost:8080/health

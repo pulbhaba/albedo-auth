@@ -2,6 +2,10 @@ plugins {
 	id 'java-library'
 }
 
+java {
+	sourceCompatibility = '11'
+}
+
 dependencies {
 }
 
