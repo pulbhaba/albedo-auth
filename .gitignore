@@ -3,3 +3,7 @@ bin/
 
 .gradle/
 .vscode/
+auth-api/src/main/java/com/akbo/auth/api/controller/AdminController.java
+auth.session.sql
+marialocal.session.sql
+auth-api/src/main/resources/data.sql
