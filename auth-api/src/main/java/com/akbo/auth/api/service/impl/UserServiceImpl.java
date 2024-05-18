@@ -13,6 +13,7 @@ import com.akbo.auth.api.service.UserService;
 import com.akbo.auth.dao.entity.User;
 import com.akbo.auth.dao.repository.UserRepository;
 import com.akbo.auth.dto.UserDto;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -34,7 +35,6 @@ public class UserServiceImpl implements UserService {
 
         if (Objects.nonNull(existingUser))
             return modelMapper.map(existingUser, UserDto.class);
-        ;
 
         final User newUser = modelMapper.map(user, User.class);
         newUser.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -66,18 +66,19 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean userExists(final String username) {
-        return false;
+        return userRepository.findByUsername(username)
+                .isPresent();
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(final String username) throws UsernameNotFoundException {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("The username was not found in the system"));
     }
 
     @Override
-    public UserDto getUser(String username) {
-        final UserDto user = modelMapper.map((User) loadUserByUsername(username), UserDto.class);
+    public UserDto getUser(final String username) {
+        final var user = modelMapper.map((User) loadUserByUsername(username), UserDto.class);
         return user;
     }
 }

@@ -3,6 +3,8 @@ package com.akbo.auth.api.config;
 import java.util.Arrays;
 
 import org.springframework.context.annotation.Bean;
+
+import static org.springframework.security.config.Customizer.withDefaults;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -17,13 +19,12 @@ public class BasicAuthWebSecurityConfiguration {
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http.authorizeRequests()
-        .antMatchers("/public/").permitAll()
-        .and()
-        .csrf().disable()
-        .cors()
-        .and()
-        .httpBasic();
+    http.authorizeRequests(requests -> requests
+        .antMatchers("/admin/**", "/user/**").authenticated()
+        .antMatchers("/public/**").permitAll())
+        .csrf(csrf -> csrf.disable())
+        .cors(withDefaults())
+        .httpBasic(withDefaults());
     return http.build();
   }
 
@@ -41,6 +42,6 @@ public class BasicAuthWebSecurityConfiguration {
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);
     return source;
-}
+  }
 
 }

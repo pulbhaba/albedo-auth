@@ -16,11 +16,13 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	implementation 'org.springframework.security:spring-security-oauth2-authorization-server:0.2.0'
 
 	// implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'mysql:mysql-connector-java:8.0.33'
 	implementation 'org.modelmapper:modelmapper:2.3.6'
+	implementation 'org.sqids:sqids:0.1.0'
 
 	// implementation 'org.springframework.session:spring-session-core'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

@@ -34,9 +34,9 @@ public class User extends AbstractEntity implements UserDetails {
     @Getter
     private String lastName;
     private Boolean enabled;
-    private Boolean accountNonExpired;
-    private Boolean credentialsNonExpired;
-    private Boolean accountNonLocked;
+    private Boolean accountNonExpired = true;
+    private Boolean credentialsNonExpired = true;
+    private Boolean accountNonLocked = true;
 
     @Getter
     @ManyToMany(fetch = FetchType.EAGER)

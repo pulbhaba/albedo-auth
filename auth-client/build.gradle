@@ -7,6 +7,7 @@ java {
 }
 
 dependencies {
+	implementation "org.springframework:spring-web:5.3.31"
 }
 
 tasks.named('test') {
