@@ -26,21 +26,16 @@ import lombok.extern.java.Log;
 @RequiredArgsConstructor
 public class PasswordServiceImpl implements PasswordService {
 
-    @Value("${spring.security.client.secret}")
-    private String encryptSecret;
 
-    @Value("${spring.security.client.salt}")
-    private String encryptSalt;
 
     private final PasswordResetRequestRepository passwordResetRequestRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final PasswordEncoder passwordEncoder;
+    private final SecretKey symKey;
 
     @Override
     public UserDto changePassword(final PasswordChangeDto request) {
-        final var symKey = PasswordTools.getKeyFromPassword(encryptSecret, encryptSalt);
-
         final String requestIdWithStr = PasswordTools.decrypt(PasswordTools.urlAlgorithm, request.getRequestKey(), symKey);
         final String[] idAndString = requestIdWithStr.split("\\|");
         final var requestId = Long.valueOf(idAndString[0]);
@@ -62,11 +57,11 @@ public class PasswordServiceImpl implements PasswordService {
         userRepository.findByUsername(username)
                 .ifPresent(user -> request.setUser(user));
         request.setRandomString(PasswordTools.generateRandomString());
-        final var symKey = PasswordTools.getKeyFromPassword(encryptSecret, encryptSalt);
 
         final var savedRequest = passwordResetRequestRepository.save(request);
         final var idAndString = String.join("|", savedRequest.getId().toString(), savedRequest.getRandomString());
         final var encryptedKey = PasswordTools.encrypt(PasswordTools.urlAlgorithm, idAndString, symKey);
+        // Remove this line for production
         log.info("The encrypted key for password reset is: " + encryptedKey);
     }
 }

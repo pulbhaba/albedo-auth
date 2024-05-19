@@ -22,8 +22,9 @@
                 "humao.rest-client",
                 "vscjava.vscode-gradle",
                 "vmware.vscode-boot-dev-pack",
-                "shardulm94.trailing-spaces"
-                // "Pleiades.java-extension-pack-jdk"
+                "shardulm94.trailing-spaces",
+                "mtxr.sqltools",
+                "mtxr.sqltools-driver-mysql"
             ]
         }
     },

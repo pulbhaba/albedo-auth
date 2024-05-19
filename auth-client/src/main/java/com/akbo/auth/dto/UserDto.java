@@ -10,5 +10,6 @@ public class UserDto extends AbstractDto {
     private String password;
     private String firstName;
     private String lastName;
+    private String emailAddress;
     private Boolean enabled;
 }

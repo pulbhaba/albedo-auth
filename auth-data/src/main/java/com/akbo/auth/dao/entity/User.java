@@ -33,6 +33,8 @@ public class User extends AbstractEntity implements UserDetails {
     private String firstName;
     @Getter
     private String lastName;
+    @Getter
+    private String emailAddress;
     private Boolean enabled;
     private Boolean accountNonExpired = true;
     private Boolean credentialsNonExpired = true;

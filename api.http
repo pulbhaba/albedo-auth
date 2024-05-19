@@ -8,7 +8,7 @@ Authorization: Basic admin:admin
 ###
 POST http://localhost:8080/admin/user/
 Content-Type: application/json
-# Authorization: Basic admin:admin
+Authorization: Basic admin:admin1
 
 {
     "username": "admin",
@@ -17,7 +17,6 @@ Content-Type: application/json
     "enabled": true,
     "password": "admin"
 }
-
 
 ###
 GET http://localhost:8080/admin/user/admin
@@ -31,19 +30,17 @@ Authorization: Basic admin:admin
 
 ###
 GET  http://localhost:8080/oauth2/token?grant_type=token
-Authorization: Basic user:password
+Authorization: Basic admin:admin
 Content-Type: application/json
-
 
 ###
 GET http://localhost:8080/public/user/admin/reset-password
-
 
 ###
 POST http://localhost:8080/public/change-password/
 Content-Type: application/json
 
 {
-    "requestKey": "z1qAn958Wj+gF7bzBdBGAollI1XI5vRXO8nx49sVHCl4w/N2",
+    "requestKey": "2rx9uHOzsswqzLjcz1qAn958Wj+gF7bzBdBGAollI1XI5vRXO8nx49sVHCl4w/N2",
     "newPassword": "admin"
 }

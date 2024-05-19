@@ -1,5 +1,6 @@
 package com.akbo.auth.dao.entity;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -22,6 +23,7 @@ public class PasswordChangeRequest extends AbstractEntity {
     @ManyToOne(targetEntity = User.class, optional = true)
     @JoinColumn(referencedColumnName = "id", name = "user_id")
     private User user;
+    @Column(length = 20)
     private String randomString;
     private Boolean expired;
     private Boolean passwordChanged;
