@@ -1,5 +1,6 @@
 package com.akbo.auth.api.service.impl;
 
+import java.util.HashSet;
 import java.util.Objects;
 
 import org.apache.coyote.BadRequestException;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.akbo.auth.api.service.UserService;
 import com.akbo.auth.dao.entity.User;
+import com.akbo.auth.dao.entity.UserRole;
 import com.akbo.auth.dao.repository.UserRepository;
 import com.akbo.auth.dto.UserDto;
 
@@ -37,6 +39,8 @@ public class UserServiceImpl implements UserService {
             return modelMapper.map(existingUser, UserDto.class);
 
         final User newUser = modelMapper.map(user, User.class);
+        newUser.setAuthorities(new HashSet<>());
+        user.getRoles().forEach(role -> newUser.getAuthorities().add(new UserRole(role)));
         newUser.setPassword(passwordEncoder.encode(user.getPassword()));
         final User savedUser = userRepository.save(newUser);
 

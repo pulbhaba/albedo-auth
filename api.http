@@ -1,21 +1,18 @@
 ###
-GET http://localhost:8080/public/
-
-###
-GET http://localhost:8080/auth/
-Authorization: Basic admin:admin
-
-###
 POST http://localhost:8080/admin/user/
 Content-Type: application/json
-Authorization: Basic admin:admin1
+Authorization: Basic admin:admin
 
 {
-    "username": "admin",
-    "firstName": "Super",
+    "username": "power_admin",
+    "firstName": "Mid",
     "lastName": "Admin",
     "enabled": true,
-    "password": "admin"
+    "password": "admin",
+    "roles": [
+        "ROLE_USER",
+        "ROLE_POWER_USER"
+    ]
 }
 
 ###
@@ -29,7 +26,7 @@ Content-Type: application/json
 Authorization: Basic admin:admin
 
 ###
-GET  http://localhost:8080/oauth2/token?grant_type=token
+GET  http://localhost:8080/oauth2/token?grant_type=client_credentials
 Authorization: Basic admin:admin
 Content-Type: application/json
 
@@ -41,6 +38,6 @@ POST http://localhost:8080/public/change-password/
 Content-Type: application/json
 
 {
-    "requestKey": "2rx9uHOzsswqzLjcz1qAn958Wj+gF7bzBdBGAollI1XI5vRXO8nx49sVHCl4w/N2",
+    "requestKey": "9N4BwP9wWzBQMRYTHjAk2ZuKbKDPqtsJUWs9QU6mI4w=",
     "newPassword": "admin"
 }

@@ -1,5 +1,7 @@
 package com.akbo.auth.dto;
 
+import java.util.Set;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -12,4 +14,5 @@ public class UserDto extends AbstractDto {
     private String lastName;
     private String emailAddress;
     private Boolean enabled;
+    private Set<Role> roles;
 }

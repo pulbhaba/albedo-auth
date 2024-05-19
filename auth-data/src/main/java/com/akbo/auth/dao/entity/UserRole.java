@@ -11,6 +11,7 @@ import org.springframework.security.core.GrantedAuthority;
 
 import com.akbo.auth.dto.Role;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -21,6 +22,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "roles")
 @Entity
 @Audited(withModifiedFlag = true)
+@AllArgsConstructor
 @NoArgsConstructor
 public class UserRole implements GrantedAuthority {
 
