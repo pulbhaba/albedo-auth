@@ -8,3 +8,7 @@ auth.session.sql
 marialocal.session.sql
 auth-api/src/main/resources/data.sql
 .env
+.settings
+.project
+.factorypath
+.classpath
