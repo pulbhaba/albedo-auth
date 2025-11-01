@@ -14,6 +14,8 @@ public class GlobalExceptionHandler {
         final ErrorDto error = new ErrorDto();
         error.setStatusCode(e.getRawStatusCode());
         error.setMessage(e.getStatusText());
+        error.putItem("error", e.getMessage());
+        error.putItem("stackTrace", e.getStackTrace());
         return new ResponseEntity<>(error, e.getStatusCode());
     }
 

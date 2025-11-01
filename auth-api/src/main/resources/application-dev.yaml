@@ -6,6 +6,10 @@ spring:
     user:
       name: user
       password: password
+    oauth2:
+      resource-owner:
+        jwt:
+          signing-key: secret
 app:
   auth:
     issuer: http://localhost:8080

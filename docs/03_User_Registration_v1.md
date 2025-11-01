@@ -1,4 +1,3 @@
-
 # 3. User Registration
 
 This chapter documents the user-facing lifecycle that is already implemented in the codebase.  
@@ -7,14 +6,19 @@ retrieving user information, and managing password resets. Together these endpoi
 the core onboarding workflow for Albedo Auth.
 
 ## Components Involved
-- `UserController` (`auth-api/src/main/java/com/akbo/auth/api/controller/UserController.java`) exposes read access to user profiles.
-- `PublicController` (`auth-api/src/main/java/com/akbo/auth/api/controller/PublicController.java`) handles public registration and password reset flows.
+
+- `UserController` (`auth-api/src/main/java/com/akbo/auth/api/controller/UserController.java`) exposes read access to
+  user profiles.
+- `PublicController` (`auth-api/src/main/java/com/akbo/auth/api/controller/PublicController.java`) handles public
+  registration and password reset flows.
 - `UserServiceImpl` manages persistence of `User` entities and enforces unique usernames.
 - `PasswordServiceImpl` controls password reset tokens, encryption, and password hashing.
 - `PasswordChangeRequest` entity persists reset tokens with auditing through Envers.
 
 ## Data Contracts
+
 ### UserDto
+
 Returned by both controllers and mapped from the `User` entity.
 
 ```json
@@ -30,15 +34,19 @@ Returned by both controllers and mapped from the `User` entity.
   "lastName": "User",
   "emailAddress": "sample@albedo.dev",
   "enabled": true,
-  "roles": ["ROLE_USER"]
+  "roles": [
+    "ROLE_USER"
+  ]
 }
 ```
 
 Notes:
+
 - `password` contains the encoded password hash when returned by the API; clients must treat it as read-only.
 - `roles` serialises the `Set<Role>` that is mapped in `UserServiceImpl#createUser`.
 
 ### PasswordChangeDto
+
 Accepted by the password change endpoint.
 
 ```json
@@ -52,13 +60,18 @@ Accepted by the password change endpoint.
 - `newPassword` is hashed with the configured `PasswordEncoder` before being persisted.
 
 ## API Endpoints
+
 ### POST `/public/user/register`
+
 Creates a new user using the supplied profile data.
 
 - **Controller method:** `PublicController#registerUser`
-- **Request body:** `UserDto` (plain-text `password` is required; it is encoded by `UserServiceImpl` before persistence).
-- **Success response:** `200 OK` with the stored `UserDto`. Existing users (matched by `id` or `username`) are returned unchanged.
-- **Failure behaviour:** If the payload omits required fields such as `roles` or `password`, a persistence error is thrown. Validation will be added in future iterations.
+- **Request body:** `UserDto` (plain-text `password` is required; it is encoded by `UserServiceImpl` before
+  persistence).
+- **Success response:** `200 OK` with the stored `UserDto`. Existing users (matched by `id` or `username`) are returned
+  unchanged.
+- **Failure behaviour:** If the payload omits required fields such as `roles` or `password`, a persistence error is
+  thrown. Validation will be added in future iterations.
 
 Example request:
 
@@ -70,17 +83,21 @@ Example request:
   "lastName": "One",
   "emailAddress": "reader01@example.com",
   "enabled": true,
-  "roles": ["ROLE_USER"]
+  "roles": [
+    "ROLE_USER"
+  ]
 }
 ```
 
 ### GET `/user/{username}`
+
 Reads a user profile.
 
 - **Controller method:** `UserController#getUser`
 - **Path parameters:** `username` – exact username stored in the database.
 - **Success response:** `200 OK` with `UserDto` payload.
-- **Failure behaviour:** a `UsernameNotFoundException` propagates if the user does not exist. The global handler does not yet translate this into a 404, so clients currently receive a 500 error for unknown users.
+- **Failure behaviour:** a `UsernameNotFoundException` propagates if the user does not exist. The global handler does
+  not yet translate this into a 404, so clients currently receive a 500 error for unknown users.
 
 Example response:
 
@@ -92,24 +109,32 @@ Example response:
   "lastName": "One",
   "emailAddress": "reader01@example.com",
   "enabled": true,
-  "roles": ["ROLE_USER"]
+  "roles": [
+    "ROLE_USER"
+  ]
 }
 ```
 
 ### GET `/public/user/{username}/reset-password`
+
 Starts the password reset process for an existing account.
 
 - **Controller method:** `PublicController#requestPasswordReset`
-- **Behaviour:** Creates a `PasswordChangeRequest`, generates an 18-character random string, persists it, and logs the encrypted `requestKey`. The active notification implementation emails the token to the user using the configured personal SMTP account. When the username is unknown, a token is still generated without a linked user, avoiding user enumeration at the cost of a no-op reset.
+- **Behaviour:** Creates a `PasswordChangeRequest`, generates an 18-character random string, persists it, and logs the
+  encrypted `requestKey`. The active notification implementation emails the token to the user using the configured
+  personal SMTP account. When the username is unknown, a token is still generated without a linked user, avoiding user
+  enumeration at the cost of a no-op reset.
 - **Success response:** `200 OK` with no body.
 
 ### POST `/public/change-password/`
+
 Finalises a password reset with the encrypted token produced above.
 
 - **Controller method:** `PublicController#changePassword`
 - **Request body:** `PasswordChangeDto`
 - **Success response:** `200 OK` with the updated `UserDto`.
-- **Failure responses:** `401 Unauthorized` if the token cannot be decrypted or looked up (`UnauthorizedException`), `400 Bad Request` for malformed keys.
+- **Failure responses:** `401 Unauthorized` if the token cannot be decrypted or looked up (`UnauthorizedException`),
+  `400 Bad Request` for malformed keys.
 
 Example request:
 
@@ -121,22 +146,36 @@ Example request:
 ```
 
 ## Registration and Onboarding Flow
-1. **Admin or automated provisioning:** Trusted systems can call `UserService#createUser(UserDto)` directly (for example via an admin UI or bootstrap script). The service enforces unique usernames and hashes passwords before persistence.
-2. **Self-service registration:** Public clients submit the same payload through `POST /public/user/register`, which calls the same service layer and returns the persisted record.
-3. **Initial password setup or recovery:** Triggered by calling `GET /public/user/{username}/reset-password`. The logged `requestKey` is meant to be delivered to the user through email/SMS.
-4. **Password confirmation:** Users submit the encrypted key and their desired password to `POST /public/change-password/`, which updates the stored credentials and marks the request as used.
-5. **Authentication:** Clients exchange the username and password for JWT access tokens via `POST /oauth2/token` using the password grant.
+
+1. **Admin or automated provisioning:** Trusted systems can call `UserService#createUser(UserDto)` directly (for example
+   via an admin UI or bootstrap script). The service enforces unique usernames and hashes passwords before persistence.
+2. **Self-service registration:** Public clients submit the same payload through `POST /public/user/register`, which
+   calls the same service layer and returns the persisted record.
+3. **Initial password setup or recovery:** Triggered by calling `GET /public/user/{username}/reset-password`. The logged
+   `requestKey` is meant to be delivered to the user through email/SMS.
+4. **Password confirmation:** Users submit the encrypted key and their desired password to
+   `POST /public/change-password/`, which updates the stored credentials and marks the request as used.
+5. **Authentication:** Clients exchange the username and password for JWT access tokens via `POST /oauth2/token` using
+   the password grant.
 
 Together, these steps cover user provisioning, secure password establishment, and account retrieval within the service.
 
 ## Validation Rules and Constraints
-- **Unique username:** Enforced at the database level (`users.username` unique constraint) and honoured by `UserServiceImpl`.
-- **Password reset token:** The combination of request ID and random string must match an unexpired row in `password_change_request`; once used it is flagged to prevent reuse.
+
+- **Unique username:** Enforced at the database level (`users.username` unique constraint) and honoured by
+  `UserServiceImpl`.
+- **Password reset token:** The combination of request ID and random string must match an unexpired row in
+  `password_change_request`; once used it is flagged to prevent reuse.
 - **Password storage:** All passwords are encoded with the configured `PasswordEncoder`; raw passwords never persist.
-- **Account status flags:** `User` entities default to non-expired, non-locked, and credentials-valid states; only the `enabled` flag is mutable through registration operations.
+- **Account status flags:** `User` entities default to non-expired, non-locked, and credentials-valid states; only the
+  `enabled` flag is mutable through registration operations.
 
 ## Current Limitations & Next Steps
-- Email delivery is active via personal SMTP credentials supplied through `MAIL_*` environment variables; move to a managed provider and track delivery outcomes in a future iteration.
-- Additional validation (password strength, profile field formatting) should be added to mirror production requirements when the registration endpoint goes live.
-- Input validation for registration (required fields, role constraints) should be formalised to prevent persistence-level errors and enforce password policies.
+
+- Email delivery is active via personal SMTP credentials supplied through `MAIL_*` environment variables; move to a
+  managed provider and track delivery outcomes in a future iteration.
+- Additional validation (password strength, profile field formatting) should be added to mirror production requirements
+  when the registration endpoint goes live.
+- Input validation for registration (required fields, role constraints) should be formalised to prevent
+  persistence-level errors and enforce password policies.
 - SMS notifications remain disabled (`notification.sms.enabled=false`) until an external provider is configured.

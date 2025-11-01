@@ -1,7 +1,8 @@
 package com.akbo.auth.api.config;
 
+import com.akbo.auth.api.jose.Keys;
+import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
-import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,12 +29,9 @@ import org.springframework.security.oauth2.server.authorization.config.ProviderS
 import org.springframework.security.oauth2.server.authorization.config.TokenSettings;
 import org.springframework.security.web.SecurityFilterChain;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.UUID;
 
 @Configuration
@@ -108,13 +106,9 @@ public class AuthorizationServerConfiguration {
     }
 
     @Bean
-    public JWKSource<SecurityContext> jwkSource() {
-        final KeyPair keyPair = generateRsaKey();
-        final RSAKey rsaKey = new RSAKey.Builder((RSAPublicKey) keyPair.getPublic())
-                .privateKey((RSAPrivateKey) keyPair.getPrivate())
-                .keyID(UUID.randomUUID().toString())
-                .build();
-        final JWKSet jwkSet = new JWKSet(rsaKey);
+    public JWKSource<SecurityContext> jwkSource(@Value("${spring.security.oauth2.resource-owner.jwt.signing-key}") final String symKey) {
+        List<JWK> jwkKeys = List.of(Keys.getHs256Jwk(symKey), Keys.getRsaJwk());
+        JWKSet jwkSet = new JWKSet(jwkKeys);
         return (jwkSelector, securityContext) -> jwkSelector.select(jwkSet);
     }
 
@@ -130,15 +124,6 @@ public class AuthorizationServerConfiguration {
         return new JdbcOAuth2AuthorizationConsentService(jdbcTemplate, registeredClientRepository);
     }
 
-    private static KeyPair generateRsaKey() {
-        try {
-            final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-            keyPairGenerator.initialize(2048);
-            return keyPairGenerator.generateKeyPair();
-        } catch (final Exception ex) {
-            throw new IllegalStateException("Failed to generate RSA key pair", ex);
-        }
-    }
 
     private static Duration parseDuration(final String value, final String propertyName) {
         try {

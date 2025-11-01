@@ -1,17 +1,12 @@
 package com.akbo.auth.dao.entity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
-
-import org.hibernate.envers.Audited;
-import org.joda.time.LocalDateTime;
-
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.envers.Audited;
+import org.joda.time.LocalDateTime;
+
+import javax.persistence.*;
 
 @Setter
 @Getter
@@ -20,7 +15,7 @@ import lombok.Setter;
 @Table(name = "password_change_request")
 @EqualsAndHashCode(callSuper = true)
 public class PasswordChangeRequest extends AbstractEntity {
-    @ManyToOne(targetEntity = User.class, optional = true)
+    @ManyToOne(targetEntity = User.class)
     @JoinColumn(referencedColumnName = "id", name = "user_id")
     private User user;
     @Column(length = 20)

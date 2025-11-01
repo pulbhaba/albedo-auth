@@ -4,15 +4,15 @@ Content-Type: application/json
 Authorization: Basic admin:admin
 
 {
-    "username": "power_admin",
-    "firstName": "Mid",
-    "lastName": "Admin",
-    "enabled": true,
-    "password": "admin",
-    "roles": [
-        "ROLE_USER",
-        "ROLE_POWER_USER"
-    ]
+  "username": "power_admin",
+  "firstName": "Mid",
+  "lastName": "Admin",
+  "enabled": true,
+  "password": "admin",
+  "roles": [
+    "ROLE_USER",
+    "ROLE_POWER_USER"
+  ]
 }
 
 ###
@@ -38,6 +38,6 @@ POST http://localhost:8080/public/change-password/
 Content-Type: application/json
 
 {
-    "requestKey": "9N4BwP9wWzBQMRYTHjAk2ZuKbKDPqtsJUWs9QU6mI4w=",
-    "newPassword": "admin"
+  "requestKey": "9N4BwP9wWzBQMRYTHjAk2ZuKbKDPqtsJUWs9QU6mI4w=",
+  "newPassword": "admin"
 }
