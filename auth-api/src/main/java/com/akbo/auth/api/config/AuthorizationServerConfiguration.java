@@ -16,24 +16,24 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
-import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationConsentService;
-import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
+import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
-import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.ProviderSettings;
 import org.springframework.security.oauth2.server.authorization.config.TokenSettings;
-import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
-import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
-import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
+import org.springframework.security.oauth2.server.authorization.config.ClientSettings;
 import org.springframework.security.web.SecurityFilterChain;
 
 import com.akbo.auth.api.security.password.OAuth2ResourceOwnerPasswordAuthenticationConverter;
@@ -48,28 +48,18 @@ import com.nimbusds.jose.proc.SecurityContext;
 @Configuration
 public class AuthorizationServerConfiguration {
 
-    public static final AuthorizationGrantType PASSWORD_GRANT_TYPE = new AuthorizationGrantType("password");
-
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
-    public SecurityFilterChain authorizationServerSecurityFilterChain(final HttpSecurity http,
-            final OAuth2ResourceOwnerPasswordAuthenticationConverter passwordAuthenticationConverter,
-            final OAuth2ResourceOwnerPasswordAuthenticationProvider passwordAuthenticationProvider) throws Exception {
+    public SecurityFilterChain authorizationServerSecurityFilterChain(final HttpSecurity http) throws Exception {
 
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
-
-        http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
-                .tokenEndpoint(tokenEndpoint -> tokenEndpoint
-                        .accessTokenRequestConverter(passwordAuthenticationConverter)
-                        .authenticationProvider(passwordAuthenticationProvider))
-                .oidc(Customizer.withDefaults());
         http.oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
-
-        return http.build();
+        return http.formLogin(Customizer.withDefaults()).build();
     }
 
     @Bean
     public RegisteredClientRepository registeredClientRepository(
+            final JdbcTemplate jdbcTemplate,
             final PasswordEncoder passwordEncoder,
             @Value("${app.auth.client-id:albedo-client}") final String clientId,
             @Value("${app.auth.client-secret:albedo-secret}") final String clientSecret,
@@ -99,7 +89,7 @@ public class AuthorizationServerConfiguration {
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .authorizationGrantType(PASSWORD_GRANT_TYPE)
+                .authorizationGrantType(AuthorizationGrantType.PASSWORD)
                 .tokenSettings(tokenSettings)
                 .clientSettings(clientSettings)
                 .redirectUri(redirectUri);
@@ -113,7 +103,11 @@ public class AuthorizationServerConfiguration {
 
         final RegisteredClient registeredClient = clientBuilder.build();
 
-        return new InMemoryRegisteredClientRepository(registeredClient);
+        final JdbcRegisteredClientRepository repository = new JdbcRegisteredClientRepository(jdbcTemplate);
+        if (repository.findByClientId(clientId) == null) {
+            repository.save(registeredClient);
+        }
+        return repository;
     }
 
     @Bean
@@ -161,13 +155,15 @@ public class AuthorizationServerConfiguration {
     }
 
     @Bean
-    public OAuth2AuthorizationService authorizationService() {
-        return new InMemoryOAuth2AuthorizationService();
+    public OAuth2AuthorizationService authorizationService(final JdbcTemplate jdbcTemplate,
+            final RegisteredClientRepository registeredClientRepository) {
+        return new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
     }
 
     @Bean
-    public OAuth2AuthorizationConsentService authorizationConsentService() {
-        return new InMemoryOAuth2AuthorizationConsentService();
+    public OAuth2AuthorizationConsentService authorizationConsentService(final JdbcTemplate jdbcTemplate,
+            final RegisteredClientRepository registeredClientRepository) {
+        return new JdbcOAuth2AuthorizationConsentService(jdbcTemplate, registeredClientRepository);
     }
 
     private static KeyPair generateRsaKey() {

@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
@@ -27,7 +28,6 @@ import org.springframework.security.oauth2.server.authorization.OAuth2Authorizat
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization.Token;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AccessTokenAuthenticationToken;
-import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthenticationProviderUtils;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.config.ProviderSettings;
@@ -39,7 +39,7 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class OAuth2ResourceOwnerPasswordAuthenticationProvider
-        implements org.springframework.security.authentication.AuthenticationProvider {
+        implements AuthenticationProvider {
 
     private final AuthenticationManager authenticationManager;
     private final OAuth2AuthorizationService authorizationService;
@@ -52,12 +52,12 @@ public class OAuth2ResourceOwnerPasswordAuthenticationProvider
                 (OAuth2ResourceOwnerPasswordAuthenticationToken) authentication;
 
         final OAuth2ClientAuthenticationToken clientPrincipal =
-                OAuth2AuthenticationProviderUtils.getAuthenticatedClientElseThrowInvalidClient(authentication);
+                getAuthenticatedClientElseThrowInvalidClient(authentication);
         final RegisteredClient registeredClient = clientPrincipal.getRegisteredClient();
         if (registeredClient == null) {
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
         }
-        if (!registeredClient.getAuthorizationGrantTypes().contains(AuthorizationServerConfiguration.PASSWORD_GRANT_TYPE)) {
+        if (!registeredClient.getAuthorizationGrantTypes().contains(AuthorizationGrantType.PASSWORD)) {
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
         }
 
@@ -99,7 +99,7 @@ public class OAuth2ResourceOwnerPasswordAuthenticationProvider
 
         OAuth2Authorization.Builder authorizationBuilder = OAuth2Authorization.withRegisteredClient(registeredClient)
                 .principalName(userAuthentication.getName())
-                .authorizationGrantType(AuthorizationServerConfiguration.PASSWORD_GRANT_TYPE)
+                .authorizationGrantType(AuthorizationGrantType.PASSWORD)
                 .attribute(OAuth2Authorization.AUTHORIZED_SCOPE_ATTRIBUTE_NAME, requestedScopes)
                 .token(accessToken, metadata -> metadata.put(Token.CLAIMS_METADATA_NAME, jwt.getClaims()));
 
@@ -130,5 +130,18 @@ public class OAuth2ResourceOwnerPasswordAuthenticationProvider
         final Instant issuedAt = Instant.now();
         final Instant expiresAt = issuedAt.plus(registeredClient.getTokenSettings().getRefreshTokenTimeToLive());
         return new OAuth2RefreshToken(UUID.randomUUID().toString(), issuedAt, expiresAt);
+    }
+
+    static OAuth2ClientAuthenticationToken getAuthenticatedClientElseThrowInvalidClient(Authentication authentication) {
+        OAuth2ClientAuthenticationToken clientPrincipal = null;
+        if (OAuth2ClientAuthenticationToken.class.isAssignableFrom(authentication.getPrincipal().getClass())) {
+            clientPrincipal = (OAuth2ClientAuthenticationToken)authentication.getPrincipal();
+        }
+
+        if (clientPrincipal != null && clientPrincipal.isAuthenticated()) {
+            return clientPrincipal;
+        } else {
+            throw new OAuth2AuthenticationException("invalid_client");
+        }
     }
 }

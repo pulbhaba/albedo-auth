@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.web.authentication.AuthenticationConverter;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
@@ -24,7 +25,7 @@ public class OAuth2ResourceOwnerPasswordAuthenticationConverter implements Authe
     @Override
     public Authentication convert(final HttpServletRequest request) {
         final String grantType = request.getParameter(OAuth2ParameterNames.GRANT_TYPE);
-        if (!AuthorizationServerConfiguration.PASSWORD_GRANT_TYPE.getValue().equals(grantType)) {
+        if (!AuthorizationGrantType.PASSWORD.getValue().equals(grantType)) {
             return null;
         }
 
@@ -67,7 +68,7 @@ public class OAuth2ResourceOwnerPasswordAuthenticationConverter implements Authe
                 new UsernamePasswordAuthenticationToken(username, password);
 
         return new OAuth2ResourceOwnerPasswordAuthenticationToken(
-                AuthorizationServerConfiguration.PASSWORD_GRANT_TYPE,
+                AuthorizationGrantType.PASSWORD,
                 clientPrincipal,
                 usernamePasswordAuthentication,
                 scopes,
