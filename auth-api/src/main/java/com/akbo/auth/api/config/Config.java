@@ -9,9 +9,9 @@ import org.springframework.context.annotation.Configuration;
 
 import com.akbo.auth.util.PasswordTools;
 
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 
-@Log
+@Slf4j
 @Configuration
 public class Config {
 

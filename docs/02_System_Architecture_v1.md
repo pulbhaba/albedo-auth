@@ -23,38 +23,22 @@ The Albedo Auth service is divided into three separate sub-projects using Gradle
    - Contains the service backend implementation.
    - Manages the core authentication and authorization logic.
 
-## Controllers
+## Controllers & Endpoints
 
-The service includes three main controllers:
+The authenticated API surface is intentionally small and composed of:
 
-1. **User Controller**
-   - Handles user-related tasks such as registration, login, and password reset.
-   - Example endpoints:
-     - `/user/register`: User registration.
-     - `/user/login`: User login.
-     - `/user/password-reset`: Password reset request.
+1. **UserController (`/user`)**
+   - `GET /user/{username}` – Retrieve a user profile (requires authentication).
 
-2. **Admin Controller**
-   - Manages administrative tasks such as role management and user administration.
-   - Example endpoints:
-     - `/admin/users`: Manage users.
-     - `/admin/roles`: Manage roles.
-     - `/admin/users/{userId}/approve`: Approve user registration.
+2. **PublicController (`/public`)**
+   - `POST /public/user/register` – Self-service registration.
+   - `GET /public/user/{username}/reset-password` – Initiate password reset (sends the encrypted token via email).
+   - `POST /public/change-password/` – Finalise password change with the encrypted token.
 
-3. **Public Controller**
-   - Manages public-facing tasks that do not necessitate authentication.
-   - Example endpoints:
-     - `/public/docs`: Access API documentation or user guide.
-     - `/public/terms`: Display the terms and conditions of using the service.
-     - `/public/contact`: Show contact details or support information for users.
-     - `/public/status`: Provide a basic status message indicating the service is up and running.
-     - `/public/confirm/{temporary-token}`: Endpoint for email verification, which uses a JWT token to confirm the user’s email address before approval.
-
-4. **OAuth Token Endpoint**
-   - Managed by Spring Security OAuth2 configuration.
-   - Example endpoint:
-     - `/oauth/token`: Obtain OAuth2 tokens.
-     - *Note*: This endpoint is provided and configured through Spring Security’s OAuth2 features, so no separate controller class is needed for this functionality.
+3. **OAuth 2.0 Token Endpoint (`/oauth2/token`)**
+   - Provided by Spring Authorization Server; supports `password`, `client_credentials`,
+     `refresh_token`, and `authorization_code` grant types for issuing JWT access tokens.
+   - Client authentication uses HTTP Basic or `client_id`/`client_secret` request parameters.
 
 
 # Albedo Auth Service - Build and Usage Instructions

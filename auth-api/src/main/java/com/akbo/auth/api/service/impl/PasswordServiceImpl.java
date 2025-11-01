@@ -1,19 +1,17 @@
 package com.akbo.auth.api.service.impl;
 
+import javax.crypto.SecretKey;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import com.akbo.auth.api.service.PasswordService;
+import com.akbo.auth.api.service.notification.PasswordResetNotificationService;
 import com.akbo.auth.dto.PasswordChangeDto;
 import com.akbo.auth.dto.UserDto;
 import com.akbo.auth.exception.UnauthorizedException;
 import com.akbo.auth.util.PasswordTools;
-
-import javax.crypto.SecretKey;
-
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.actuate.autoconfigure.metrics.MetricsProperties.System;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
-import com.akbo.auth.api.service.*;
 import com.akbo.auth.dao.entity.PasswordChangeRequest;
 import com.akbo.auth.dao.repository.PasswordResetRequestRepository;
 import com.akbo.auth.dao.repository.UserRepository;
@@ -26,13 +24,12 @@ import lombok.extern.java.Log;
 @RequiredArgsConstructor
 public class PasswordServiceImpl implements PasswordService {
 
-
-
     private final PasswordResetRequestRepository passwordResetRequestRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final PasswordEncoder passwordEncoder;
     private final SecretKey symKey;
+    private final PasswordResetNotificationService passwordResetNotificationService;
 
     @Override
     public UserDto changePassword(final PasswordChangeDto request) {
@@ -52,16 +49,16 @@ public class PasswordServiceImpl implements PasswordService {
     }
 
     @Override
-    public void RequestPasswordChange(String username) {
+    public void RequestPasswordChange(final String username) {
         final var request = new PasswordChangeRequest();
-        userRepository.findByUsername(username)
-                .ifPresent(user -> request.setUser(user));
+        final var userOptional = userRepository.findByUsername(username);
+        userOptional.ifPresent(request::setUser);
         request.setRandomString(PasswordTools.generateRandomString());
 
         final var savedRequest = passwordResetRequestRepository.save(request);
         final var idAndString = String.join("|", savedRequest.getId().toString(), savedRequest.getRandomString());
         final var encryptedKey = PasswordTools.encrypt(PasswordTools.urlAlgorithm, idAndString, symKey);
-        // Remove this line for production
-        log.info("The encrypted key for password reset is: " + encryptedKey);
+
+        passwordResetNotificationService.notify(userOptional.orElse(null), encryptedKey);
     }
 }
