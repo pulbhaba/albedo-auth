@@ -1,11 +1,10 @@
 package com.akbo.auth.aspect;
 
+import com.akbo.auth.dto.ErrorDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.client.HttpStatusCodeException;
-
-import com.akbo.auth.dto.ErrorDto;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {

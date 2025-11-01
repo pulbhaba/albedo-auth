@@ -1,16 +1,14 @@
 package com.akbo.auth.api.service.notification.impl;
 
+import com.akbo.auth.api.service.notification.PasswordResetNotificationService;
+import com.akbo.auth.dao.entity.User;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
-import com.akbo.auth.api.service.notification.PasswordResetNotificationService;
-import com.akbo.auth.dao.entity.User;
-
-import lombok.extern.slf4j.Slf4j;
-
 @Slf4j
 @Service
-@ConditionalOnProperty(name = "notification.sms.enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(prefix = "notification", name = "sms.enabled", havingValue = "true")
 public class SmsPasswordResetNotificationService implements PasswordResetNotificationService {
 
     @Override

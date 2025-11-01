@@ -1,23 +1,21 @@
 package com.akbo.auth.api.service.notification.impl;
 
-import static java.util.Objects.isNull;
-
+import com.akbo.auth.api.service.notification.PasswordResetNotificationService;
+import com.akbo.auth.dao.entity.User;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
-import com.akbo.auth.api.service.notification.PasswordResetNotificationService;
-import com.akbo.auth.dao.entity.User;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import static java.util.Objects.isNull;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "notification.email.enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(prefix = "notification", name = "email.enabled", havingValue = "true")
 public class EmailPasswordResetNotificationService implements PasswordResetNotificationService {
 
     private final JavaMailSender mailSender;

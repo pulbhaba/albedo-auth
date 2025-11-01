@@ -1,8 +1,11 @@
 package com.akbo.auth.api.service.impl;
 
-import java.util.HashSet;
-import java.util.Objects;
-
+import com.akbo.auth.api.service.UserService;
+import com.akbo.auth.dao.entity.User;
+import com.akbo.auth.dao.entity.UserRole;
+import com.akbo.auth.dao.repository.UserRepository;
+import com.akbo.auth.dto.UserDto;
+import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -10,13 +13,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.akbo.auth.api.service.UserService;
-import com.akbo.auth.dao.entity.User;
-import com.akbo.auth.dao.entity.UserRole;
-import com.akbo.auth.dao.repository.UserRepository;
-import com.akbo.auth.dto.UserDto;
-
-import lombok.RequiredArgsConstructor;
+import java.util.HashSet;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
