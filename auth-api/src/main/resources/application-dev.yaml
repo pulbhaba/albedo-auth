@@ -3,9 +3,9 @@ spring:
     client:
       secret: password
       salt: ABCDEFGHIJKLMOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
-    user:
-      name: user
-      password: password
+    #    user:
+    #      name: user
+    #      password: password
     oauth2:
       resource-owner:
         jwt:

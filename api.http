@@ -1,43 +1,42 @@
 ###
-POST http://localhost:8080/admin/user/
+# Public user registration (no authentication required)
+# Creates a new user account. Provide username, password, basic profile details, and initial roles.
+# Notes:
+# - 'roles' should contain valid role names provisioned by the system (e.g., ROLE_USER)
+# - Email is used for notifications (e.g., password reset)
+# - Response: 201 Created with created user payload or 400/409 on validation/conflict
+POST http://localhost:8080/public/user/register
 Content-Type: application/json
-Authorization: Basic admin:admin
 
 {
-  "username": "power_admin",
-  "firstName": "Mid",
-  "lastName": "Admin",
+  "username": "new_user",
+  "password": "changeme",
+  "firstName": "New",
+  "lastName": "User",
+  "emailAddress": "new.user@example.com",
   "enabled": true,
-  "password": "admin",
   "roles": [
-    "ROLE_USER",
-    "ROLE_POWER_USER"
+    "ROLE_USER"
   ]
 }
 
 ###
-GET http://localhost:8080/admin/user/admin
-Content-Type: application/json
-Authorization: Basic admin:admin
+# Initiate password reset for user 'new_user' (no authentication required). Sends a reset key to the configured notification channel(s).
+GET http://localhost:8080/public/user/new_user/reset-password
 
 ###
-DELETE  http://localhost:8080/admin/user/admin
-Content-Type: application/json
-Authorization: Basic admin:admin
-
-###
-GET  http://localhost:8080/oauth2/token?grant_type=client_credentials
-Authorization: Basic admin:admin
-Content-Type: application/json
-
-###
-GET http://localhost:8080/public/user/admin/reset-password
-
-###
+# Finalize password change using the reset request key (no authentication required)
+# Body: provide the 'requestKey' received via notification and the desired 'newPassword'
 POST http://localhost:8080/public/change-password/
 Content-Type: application/json
 
 {
-  "requestKey": "9N4BwP9wWzBQMRYTHjAk2ZuKbKDPqtsJUWs9QU6mI4w=",
-  "newPassword": "admin"
+  "requestKey": "6/r6Y8XQNs+Ob3dDQc+FdyuFRzfeYD6cfjcjKXkFb1s=",
+  "newPassword": "changed"
 }
+
+###
+# Obtain access token via Client Credentials grant (valid client)
+POST http://localhost:8080/oauth2/token?grant_type=client_credentials
+Content-Type: application/x-www-form-urlencoded
+Authorization: basic YWxiZWRvLWNsaWVudDphbGJlZG8tc2VjcmV0

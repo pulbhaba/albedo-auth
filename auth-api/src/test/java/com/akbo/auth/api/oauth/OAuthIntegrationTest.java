@@ -17,10 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
-        classes = com.akbo.auth.api.AuthApplication.class,
-        properties = {
-                "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration"
-        }
+        classes = com.akbo.auth.api.AuthApplication.class
 )
 @AutoConfigureMockMvc
 @TestPropertySource(locations = "classpath:application-test.properties")
@@ -39,9 +36,9 @@ class OAuthIntegrationTest {
     }
 
     @Test
-    void tokenEndpoint_clientCredentials_returnsAccessToken() throws Exception {
+    void tokenEndpoint_clientCredentials_unauthorized_invalidClient() throws Exception {
         mockMvc.perform(post("/oauth2/token")
-                        .with(httpBasic("test-client", "test-secret"))
+                        .with(httpBasic("wrong-client", "wrong-secret"))
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .accept(MediaType.APPLICATION_JSON)
                         .param("grant_type", "client_credentials")
@@ -50,6 +47,24 @@ class OAuthIntegrationTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.error", equalTo("invalid_client")));
     }
+
+    @Test
+    void tokenEndpoint_clientCredentials_authorized_returnsAccessToken() throws Exception {
+        mockMvc.perform(post("/oauth2/token")
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .param("grant_type", "client_credentials")
+                        .param("client_id", "test-client")
+                        .param("client_secret", "test-secret")
+                        .param("scope", "read"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.access_token", not(emptyOrNullString())))
+                .andExpect(jsonPath("$.token_type", equalToIgnoringCase("Bearer")))
+                .andExpect(jsonPath("$.expires_in", greaterThan(0)))
+                .andExpect(jsonPath("$.scope", containsString("read")));
+    }
+
 
     @Test
     void authorizeEndpoint_withoutLogin_redirectsToLogin() throws Exception {
