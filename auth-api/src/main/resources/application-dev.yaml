@@ -3,30 +3,22 @@ spring:
     client:
       secret: password
       salt: ABCDEFGHIJKLMOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
-    user:
-      name: user
-      password: password
+    #    user:
+    #      name: user
+    #      password: password
     oauth2:
-      authorizationserver:
-        client:
-          oidc-client:
-            registration:
-              client-id: "oidc-client"
-              client-secret: "{noop}secret"
-              client-authentication-methods:
-                - "client_secret_basic"
-              authorization-grant-types:
-                - "authorization_code"
-                - "refresh_token"
-              redirect-uris:
-                - "http://127.0.0.1:8080/login/oauth2/code/oidc-client"
-              post-logout-redirect-uris:
-                - "http://127.0.0.1:8080/"
-              scopes:
-                - "openid"
-                - "profile"
-            require-authorization-consent: true
-
+      resource-owner:
+        jwt:
+          signing-key: secret
+app:
+  auth:
+    issuer: http://localhost:8080
+    client-id: albedo-client
+    client-secret: albedo-secret
+    client-scopes: openid,profile,read,write
+    client-redirect-uri: http://127.0.0.1:8080/login/oauth2/code/albedo-client
+    access-token-ttl: PT1H
+    refresh-token-ttl: PT12H
 
 logging:
   level:

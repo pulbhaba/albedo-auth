@@ -1,7 +1,9 @@
 package com.akbo.auth.dto;
 
-import java.util.*;
 import lombok.Data;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
 public class ErrorDto {
@@ -9,7 +11,7 @@ public class ErrorDto {
     private Integer statusCode;
     private Map<String, Object> data = new HashMap<>();
 
-    public void putItem(final String key, final Object value){
+    public void putItem(final String key, final Object value) {
         data.put(key, value);
     }
 }

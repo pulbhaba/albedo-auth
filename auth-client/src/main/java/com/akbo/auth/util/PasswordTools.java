@@ -1,23 +1,16 @@
 package com.akbo.auth.util;
 
-import java.nio.charset.Charset;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
-import java.util.Base64;
-import java.util.Random;
-
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.util.Base64;
+import java.util.Random;
 
 /*
     String input = "baeldung";
@@ -46,8 +39,7 @@ public class PasswordTools {
             int index = (int) (rnd.nextFloat() * SALTCHARS.length());
             salt.append(SALTCHARS.charAt(index));
         }
-        String saltStr = salt.toString();
-        return saltStr;
+        return salt.toString();
     }
 
     public static SecretKey getKeyFromPassword(final String password, final String salt) {
@@ -56,9 +48,8 @@ public class PasswordTools {
         try {
             factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
             KeySpec spec = new PBEKeySpec(password.toCharArray(), salt.getBytes(), 65536, 256);
-            SecretKey secret = new SecretKeySpec(factory.generateSecret(spec)
+            return new SecretKeySpec(factory.generateSecret(spec)
                     .getEncoded(), "AES");
-            return secret;
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Invalid infomation provided for key generation", e);
         } catch (InvalidKeySpecException e) {

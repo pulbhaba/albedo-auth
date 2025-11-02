@@ -1,11 +1,10 @@
 package com.akbo.auth.aspect;
 
+import com.akbo.auth.dto.ErrorDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.client.HttpStatusCodeException;
-
-import com.akbo.auth.dto.ErrorDto;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -15,6 +14,8 @@ public class GlobalExceptionHandler {
         final ErrorDto error = new ErrorDto();
         error.setStatusCode(e.getRawStatusCode());
         error.setMessage(e.getStatusText());
+        error.putItem("error", e.getMessage());
+        error.putItem("stackTrace", e.getStackTrace());
         return new ResponseEntity<>(error, e.getStatusCode());
     }
 

@@ -1,15 +1,15 @@
 plugins {
-	id 'java-library'
+    id 'java-library'
 }
 
 java {
-	sourceCompatibility = '11'
+    sourceCompatibility = '11'
 }
 
 dependencies {
-	implementation "org.springframework:spring-web:5.3.31"
+    implementation "org.springframework:spring-web:5.3.31"
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
 }

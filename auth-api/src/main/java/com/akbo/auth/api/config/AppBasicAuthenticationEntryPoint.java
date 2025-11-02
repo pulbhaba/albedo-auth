@@ -4,7 +4,7 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationEn
 import org.springframework.stereotype.Component;
 
 /**
- * 
+ *
  */
 @Component
 public class AppBasicAuthenticationEntryPoint extends BasicAuthenticationEntryPoint {

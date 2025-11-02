@@ -1,108 +1,181 @@
-
 # 3. User Registration
-## Endpoint
-```
-/user/register
-```
-## HTTP Method
-```
-POST
-```
-## Request Payload
-```
-{
-"username": "string",
-"firstName": "string",
-"lastName": "string",
-"enabled": boolean,
-"password": "string",
-"roles": ["string"]
-}
-```
-## Response
-```
-{
-"message": "Registration request submitted successfully. Please await admin approval.",
-"userId": "uuid"
-}
-```
-## Validation Rules
-*  **Username**: Must be unique and meet length requirements (e.g., 3-20 characters).
-*  **First Name**: Must be a string.
-*  **Last Name**: Must be a string.
-*  **Enabled**: Must be a boolean value.
-*  **Password**: Must meet complexity requirements (e.g., minimum 8 characters, including uppercase, lowercase, numbers, and special characters).
-*  **Roles**: Must be an array of strings representing user roles.
-## Approval Process
-1.  **User Registration**: Users can register themselves using the `/user/register` endpoint.
-2.  **Pending Approval**: Registered users are marked as pending approval.
-3.  **Admin Approval**: An admin must approve the registration request using the `/admin/users/{userId}/approve` endpoint.
-## Admin Approval Endpoint
-### Endpoint
-```
-/admin/users/{userId}/approve
-```
-### HTTP Method
-```
-POST
-```
-### Request Payload
-```
-{
-"status": "approved"
-}
-```
-### Response
-```
-{
-"message": "User registration approved successfully."
-}
-```
-### Description
-* Approves a pending user registration request.
-* The `userId` in the URL path specifies the user to be approved.
-## Additional Considerations
-#### **User Verification**
-- Implement a verification process utilizing either email or SMS verification methods.
-- Introduce a `identities` attribute in the user entity to store the user's contact information for verification, which could be an array of email addresses and phone numbers.
-- Utilize the `contact_type` attribute to distinguish between email and phone number for the selected verification process.
-- The `username` attribute will store the user's phone number with the country code for unique identification and login purposes.
-- The `country` attribute will capture the user's country information to ensure proper handling of the chosen verification method and communication.
 
-By storing the user's contact information in an array within the `identities` attribute and using the `contact_type` attribute, the user's contact details, including multiple email addresses and phone numbers, can be effectively managed and verified during the registration process.
-####  **Email Verification**:
-- Introduce an email verification step to confirm the user’s email address before approval.
-- Use the following endpoint structure for email verification: `/public/confirm/{temporary-token}`.
-- The temporary token should be a JWT token containing the user ID.
-- Upon clicking the verification link, the backend server should validate the JWT token and set the "verified" attribute in the user's account to true.
-- Invalidate the JWT token after it has been used for verification to prevent future use.
-####  **SMS Verification**:
-- Implement SMS verification to validate the user's contact information during registration.
-- Evaluate the use of a reliable SMS service provider to handle verification code delivery and confirmation.
-- Use the following endpoint structure for SMS verification: `/public/confirm/{temporary-token}`.
-- The temporary token should be a JWT token containing the user ID.
-- Upon entering the verification code sent via SMS, the frontend should send a request to the backend server to validate the JWT token and set the "verified" attribute in the user's account to true.
-- Invalidate the JWT token after it has been used for verification to prevent future use.
-####  **Admin Notifications(Future)**:
-- Establish a notification system to alert administrators of new registration requests needing approval.
-- Define the appropriate triggers and thresholds for admin notifications to ensure timely review and approval of user registrations.
-- The notification system should be set up to send email notifications to designated administrators when new registration requests are submitted for approval.
-- If there are multiple administrators, the notification system should distribute notifications to two administrators at a time to ensure a fair distribution of workload.
-- Administrators should review and approve registration requests based on the value of the "require_approval" attribute in the user's role.
-- If "require_approval" is set to true, one of the administrators must approve the user registration before the "approved" attribute in the user's account is set to true.
-- For other users, the "approved" attribute will only be set to true once an administrator approves the registration request.
-####  **Account Activation Notification for Users**:
-- Implement an automated email notification system to notify users when their registration is approved and their account is activated.
-####  **User Roles**:
-- Define roles and permissions within the application to differentiate between regular users and administrators.
-- Ensure that role management functionalities are in place to assign and manage user roles based on organizational requirements.
-- Implement role-based access control to distinguish between regular users and administrators.
-- Regular users with the "require_approval" attribute set to false can register without requiring approval from administrators.
-- Administrators should have the authority to review and approve user registrations, based on the "require_approval" attribute in the user's role.
-- The "approved" attribute for regular users should be set to true once they confirm their email, indicating that their account is activated and approved for use.
-####  **Audit Logs**:
-- Implement robust logging mechanisms, such as `Envers`, to capture and maintain audit logs of registration requests and administrative actions.
-- Utilize database audit tables to store historical data and track changes in user registration activities, ensuring security, compliance, and auditing requirements are met.
-- Implement logging with correlation IDs to facilitate tracing and debugging of registration-related processes and associated administrative actions.
+This chapter documents the user-facing lifecycle that is already implemented in the codebase.  
+The functionality currently exposed by the controllers now covers self-service registration,
+retrieving user information, and managing password resets. Together these endpoints provide
+the core onboarding workflow for Albedo Auth.
 
-By incorporating both email and SMS verification methods and introducing the relevant user attributes, the registration process can be enhanced with a multi-step verification approach while ensuring flexibility and security for user verification.
+## Components Involved
+
+- `UserController` (`auth-api/src/main/java/com/akbo/auth/api/controller/UserController.java`) exposes read access to
+  user profiles.
+- `PublicController` (`auth-api/src/main/java/com/akbo/auth/api/controller/PublicController.java`) handles public
+  registration and password reset flows.
+- `UserServiceImpl` manages persistence of `User` entities and enforces unique usernames.
+- `PasswordServiceImpl` controls password reset tokens, encryption, and password hashing.
+- `PasswordChangeRequest` entity persists reset tokens with auditing through Envers.
+
+## Data Contracts
+
+### UserDto
+
+Returned by both controllers and mapped from the `User` entity.
+
+```json
+{
+  "id": 0,
+  "createdTime": "2024-01-01T00:00:00",
+  "lastUpdatedTime": "2024-01-01T00:00:00",
+  "createdBy": "system",
+  "lastUpdatedBy": "system",
+  "username": "sample-user",
+  "password": null,
+  "firstName": "Sample",
+  "lastName": "User",
+  "emailAddress": "sample@albedo.dev",
+  "enabled": true,
+  "roles": [
+    "ROLE_USER"
+  ]
+}
+```
+
+Notes:
+
+- `password` contains the encoded password hash when returned by the API; clients must treat it as read-only.
+- `roles` serialises the `Set<Role>` that is mapped in `UserServiceImpl#createUser`.
+
+### PasswordChangeDto
+
+Accepted by the password change endpoint.
+
+```json
+{
+  "requestKey": "string",
+  "newPassword": "string"
+}
+```
+
+- `requestKey` is an AES-encrypted `{requestId}|{randomString}` pair generated by `PasswordServiceImpl`.
+- `newPassword` is hashed with the configured `PasswordEncoder` before being persisted.
+
+## API Endpoints
+
+### POST `/public/user/register`
+
+Creates a new user using the supplied profile data.
+
+- **Controller method:** `PublicController#registerUser`
+- **Request body:** `UserDto` (plain-text `password` is required; it is encoded by `UserServiceImpl` before
+  persistence).
+- **Success response:** `200 OK` with the stored `UserDto`. Existing users (matched by `id` or `username`) are returned
+  unchanged.
+- **Failure behaviour:** If the payload omits required fields such as `roles` or `password`, a persistence error is
+  thrown. Validation will be added in future iterations.
+
+Example request:
+
+```json
+{
+  "username": "reader01",
+  "password": "InitialP@ssw0rd",
+  "firstName": "Reader",
+  "lastName": "One",
+  "emailAddress": "reader01@example.com",
+  "enabled": true,
+  "roles": [
+    "ROLE_USER"
+  ]
+}
+```
+
+### GET `/user/{username}`
+
+Reads a user profile.
+
+- **Controller method:** `UserController#getUser`
+- **Path parameters:** `username` – exact username stored in the database.
+- **Success response:** `200 OK` with `UserDto` payload.
+- **Failure behaviour:** a `UsernameNotFoundException` propagates if the user does not exist. The global handler does
+  not yet translate this into a 404, so clients currently receive a 500 error for unknown users.
+
+Example response:
+
+```json
+{
+  "id": 7,
+  "username": "reader01",
+  "firstName": "Reader",
+  "lastName": "One",
+  "emailAddress": "reader01@example.com",
+  "enabled": true,
+  "roles": [
+    "ROLE_USER"
+  ]
+}
+```
+
+### GET `/public/user/{username}/reset-password`
+
+Starts the password reset process for an existing account.
+
+- **Controller method:** `PublicController#requestPasswordReset`
+- **Behaviour:** Creates a `PasswordChangeRequest`, generates an 18-character random string, persists it, and logs the
+  encrypted `requestKey`. The active notification implementation emails the token to the user using the configured
+  personal SMTP account. When the username is unknown, a token is still generated without a linked user, avoiding user
+  enumeration at the cost of a no-op reset.
+- **Success response:** `200 OK` with no body.
+
+### POST `/public/change-password/`
+
+Finalises a password reset with the encrypted token produced above.
+
+- **Controller method:** `PublicController#changePassword`
+- **Request body:** `PasswordChangeDto`
+- **Success response:** `200 OK` with the updated `UserDto`.
+- **Failure responses:** `401 Unauthorized` if the token cannot be decrypted or looked up (`UnauthorizedException`),
+  `400 Bad Request` for malformed keys.
+
+Example request:
+
+```json
+{
+  "requestKey": "NsAq4th5PwXs2lVwQV9qgQ==",
+  "newPassword": "NewSecureP@55word"
+}
+```
+
+## Registration and Onboarding Flow
+
+1. **Admin or automated provisioning:** Trusted systems can call `UserService#createUser(UserDto)` directly (for example
+   via an admin UI or bootstrap script). The service enforces unique usernames and hashes passwords before persistence.
+2. **Self-service registration:** Public clients submit the same payload through `POST /public/user/register`, which
+   calls the same service layer and returns the persisted record.
+3. **Initial password setup or recovery:** Triggered by calling `GET /public/user/{username}/reset-password`. The logged
+   `requestKey` is meant to be delivered to the user through email/SMS.
+4. **Password confirmation:** Users submit the encrypted key and their desired password to
+   `POST /public/change-password/`, which updates the stored credentials and marks the request as used.
+5. **Authentication:** Clients exchange the username and password for JWT access tokens via `POST /oauth2/token` using
+   the password grant.
+
+Together, these steps cover user provisioning, secure password establishment, and account retrieval within the service.
+
+## Validation Rules and Constraints
+
+- **Unique username:** Enforced at the database level (`users.username` unique constraint) and honoured by
+  `UserServiceImpl`.
+- **Password reset token:** The combination of request ID and random string must match an unexpired row in
+  `password_change_request`; once used it is flagged to prevent reuse.
+- **Password storage:** All passwords are encoded with the configured `PasswordEncoder`; raw passwords never persist.
+- **Account status flags:** `User` entities default to non-expired, non-locked, and credentials-valid states; only the
+  `enabled` flag is mutable through registration operations.
+
+## Current Limitations & Next Steps
+
+- Email delivery is active via personal SMTP credentials supplied through `MAIL_*` environment variables; move to a
+  managed provider and track delivery outcomes in a future iteration.
+- Additional validation (password strength, profile field formatting) should be added to mirror production requirements
+  when the registration endpoint goes live.
+- Input validation for registration (required fields, role constraints) should be formalised to prevent
+  persistence-level errors and enforce password policies.
+- SMS notifications remain disabled (`notification.sms.enabled=false`) until an external provider is configured.

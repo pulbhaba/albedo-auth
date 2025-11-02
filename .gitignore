@@ -12,3 +12,5 @@ auth-api/src/main/resources/data.sql
 .project
 .factorypath
 .classpath
+
+.idea/

@@ -1,13 +1,10 @@
 package com.akbo.auth.api.service;
 
-import org.apache.coyote.BadRequestException;
+import com.akbo.auth.dto.UserDto;
 import org.springframework.security.provisioning.UserDetailsManager;
 
-import com.akbo.auth.dto.PasswordChangeDto;
-import com.akbo.auth.dto.UserDto;
+public interface UserService extends UserDetailsManager {
+    UserDto createUser(final UserDto user);
 
-public interface UserService extends UserDetailsManager{
-    public UserDto createUser(final UserDto user);
-
-    public UserDto getUser(final String username);
+    UserDto getUser(final String username);
 }
