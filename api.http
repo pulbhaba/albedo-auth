@@ -40,3 +40,45 @@ Content-Type: application/json
 POST http://localhost:8080/oauth2/token?grant_type=client_credentials
 Content-Type: application/x-www-form-urlencoded
 Authorization: basic YWxiZWRvLWNsaWVudDphbGJlZG8tc2VjcmV0
+
+###
+# Obtain access token via Password Grant (Resource Owner Password Credentials)
+# Note: Replace 'new_user' and 'changed' with valid username/password from your system
+# The user must be registered first using the registration endpoint above
+POST http://localhost:8080/oauth2/token
+Content-Type: application/x-www-form-urlencoded
+Authorization: basic YWxiZWRvLWNsaWVudDphbGJlZG8tc2VjcmV0
+
+grant_type = password &
+username = new_user &
+password = changed &
+scope = openid profile read
+
+###
+# OAuth2 Authorization Code flow — unauthenticated request (should return 401 or redirect to login)
+# Try this first to see the behavior when the user is not authenticated
+GET http://localhost:8080/oauth2/authorize?response_type=code&client_id=test-client&
+    redirect_uri=http://127.0.0.1:8080/login/oauth2/code/test-client&scope=read&state=abc
+
+###
+# OAuth2 Authorization Code flow — authenticated as end-user via HTTP Basic
+# Notes:
+# - Replace the Authorization header value with Base64(username:password) of a valid user in your system.
+# - Example below uses john:password -> am9objpwYXNzd29yZA== (adjust as needed to your actual credentials)
+# - Expected: 302 redirect with Location header containing the redirect_uri, a 'code' param, and 'state=xyz'
+GET http://localhost:8080/oauth2/authorize?response_type=code&client_id=test-client&
+    redirect_uri=http://127.0.0.1:8080/login/oauth2/code/test-client&scope=read&state=xyz
+Authorization: Basic am9objpwYXNzd29yZA==
+
+###
+# (Optional) Exchange the received authorization code for tokens (Authorization Code grant)
+# After you receive the 'code' from the previous step, paste it below in place of <AUTH_CODE>
+# If your Authorization Server accepts client_id/client_secret in the body, use as below; otherwise, use Basic auth.
+POST http://localhost:8080/oauth2/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = authorization_code &
+code = <AUTH_CODE> &
+redirect_uri = http://127.0.0.1:8080/login/oauth2/code/test-client &
+client_id = test-client &
+client_secret = test-secret

@@ -1,6 +1,7 @@
 package com.akbo.auth.api.config;
 
 import com.akbo.auth.api.jose.Keys;
+import com.akbo.auth.api.oauth.password.OAuth2PasswordAuthenticationProvider;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
@@ -8,9 +9,11 @@ import com.nimbusds.jose.proc.SecurityContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
@@ -38,8 +41,13 @@ public class AuthorizationServerConfiguration {
 
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
-    public SecurityFilterChain authorizationServerSecurityFilterChain(final HttpSecurity http) throws Exception {
+    public SecurityFilterChain authorizationServerSecurityFilterChain(final HttpSecurity http,
+                                                                      final OAuth2PasswordAuthenticationProvider passwordAuthenticationProvider) throws Exception {
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+
+        // Configure the password grant
+        http.authenticationProvider(passwordAuthenticationProvider);
+
         return http.formLogin(Customizer.withDefaults()).build();
     }
 
@@ -69,10 +77,11 @@ public class AuthorizationServerConfiguration {
         final RegisteredClient.Builder clientBuilder = RegisteredClient.withId(UUID.randomUUID().toString())
                 .clientId(clientId)
                 .clientSecret(clientSecret)
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+//                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
-                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+//                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                .authorizationGrantType(new AuthorizationGrantType("password"))
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                 .tokenSettings(tokenSettings)
                 .clientSettings(clientSettings)
@@ -121,6 +130,15 @@ public class AuthorizationServerConfiguration {
         return new JdbcOAuth2AuthorizationConsentService(jdbcTemplate, registeredClientRepository);
     }
 
+
+    @Bean
+    public OAuth2PasswordAuthenticationProvider passwordAuthenticationProvider(
+            @Lazy final AuthenticationManager authenticationManager,
+            final OAuth2AuthorizationService authorizationService,
+            final RegisteredClientRepository registeredClientRepository) {
+        return new OAuth2PasswordAuthenticationProvider(
+                authenticationManager, authorizationService, registeredClientRepository);
+    }
 
     private static Duration parseDuration(final String value, final String propertyName) {
         try {
