@@ -36,7 +36,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.List;
-import java.util.UUID;
 
 @Configuration
 public class AuthorizationServerConfiguration {
@@ -85,14 +84,13 @@ public class AuthorizationServerConfiguration {
                 .requireProofKey(false)
                 .build();
 
-        final RegisteredClient.Builder clientBuilder = RegisteredClient.withId(UUID.randomUUID().toString())
+        @SuppressWarnings("deprecation") final RegisteredClient.Builder clientBuilder = RegisteredClient
+                .withId(clientId)
                 .clientId(clientId)
                 .clientSecret(passwordEncoder.encode(clientSecret))
-//                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
-//                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                 .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-                .authorizationGrantType(new AuthorizationGrantType("password"))
+                .authorizationGrantType(AuthorizationGrantType.PASSWORD)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                 .tokenSettings(tokenSettings)
                 .clientSettings(clientSettings)

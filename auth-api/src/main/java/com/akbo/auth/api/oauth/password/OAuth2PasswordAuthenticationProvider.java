@@ -83,9 +83,10 @@ public class OAuth2PasswordAuthenticationProvider implements org.springframework
         }
 
         // Build authorization
+        @SuppressWarnings("deprecation")
         OAuth2Authorization.Builder authorizationBuilder = OAuth2Authorization.withRegisteredClient(registeredClient)
                 .principalName(userAuth.getName())
-                .authorizationGrantType(new AuthorizationGrantType("password"))
+                .authorizationGrantType(AuthorizationGrantType.PASSWORD)
                 .authorizedScopes(authorizedScopes)
                 .token(accessToken);
         if (refreshToken != null) {

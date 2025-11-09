@@ -37,9 +37,11 @@ Content-Type: application/json
 
 ###
 # Obtain access token via Client Credentials grant (valid client)
-POST http://localhost:8080/oauth2/token?grant_type=client_credentials
+POST http://localhost:8080/oauth2/token
 Content-Type: application/x-www-form-urlencoded
 Authorization: basic YWxiZWRvLWNsaWVudDphbGJlZG8tc2VjcmV0
+
+grant_type = client_credentials
 
 ###
 # Obtain access token via Password Grant (Resource Owner Password Credentials)
@@ -51,7 +53,7 @@ Authorization: basic YWxiZWRvLWNsaWVudDphbGJlZG8tc2VjcmV0
 
 grant_type = password &
 username = new_user &
-password = changed &
+password = changeme &
 scope = openid profile read
 
 ###
@@ -82,3 +84,10 @@ code = <AUTH_CODE> &
 redirect_uri = http://127.0.0.1:8080/login/oauth2/code/test-client &
 client_id = test-client &
 client_secret = test-secret
+
+###
+POST http://localhost:8080/oauth2/introspect
+Content-Type: application/x-www-form-urlencoded
+Authorization: Basic YWxiZWRvLWNsaWVudDphbGJlZG8tc2VjcmV0
+
+token = 2af74452-60da-444e-b7f4-3dacb99949a3
