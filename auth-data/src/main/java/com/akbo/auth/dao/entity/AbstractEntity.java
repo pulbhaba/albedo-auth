@@ -1,18 +1,13 @@
 package com.akbo.auth.dao.entity;
 
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
 
-import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
 import java.time.LocalDateTime;
 
 @Data
@@ -21,11 +16,12 @@ import java.time.LocalDateTime;
 public abstract class AbstractEntity {
     @Id
     @GeneratedValue(generator = "sequence-generator")
-    @GenericGenerator(name = "sequence-generator", strategy = "org.hibernate.id.enhanced.SequenceStyleGenerator", parameters = {
-            @Parameter(name = "sequence_name", value = "user_sequence"),
-            @Parameter(name = "initial_value", value = "100000"),
-            @Parameter(name = "increment_size", value = "1")
-    })
+    @SequenceGenerator(
+            name = "sequence-generator",
+            sequenceName = "user_sequence",
+            initialValue = 100000,
+            allocationSize = 1
+    )
     private Long id;
 
     @CreationTimestamp

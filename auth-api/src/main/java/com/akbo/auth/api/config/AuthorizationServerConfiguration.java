@@ -2,6 +2,7 @@ package com.akbo.auth.api.config;
 
 import com.akbo.auth.api.jose.Keys;
 import com.akbo.auth.api.oauth.password.OAuth2PasswordAuthenticationProvider;
+import com.akbo.auth.api.oauth.password.PasswordAuthenticationConverter;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
@@ -14,9 +15,8 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
@@ -26,9 +26,11 @@ import org.springframework.security.oauth2.server.authorization.OAuth2Authorizat
 import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
-import org.springframework.security.oauth2.server.authorization.config.ClientSettings;
-import org.springframework.security.oauth2.server.authorization.config.ProviderSettings;
-import org.springframework.security.oauth2.server.authorization.config.TokenSettings;
+import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
+import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
+import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
+import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
+import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 import org.springframework.security.web.SecurityFilterChain;
 
 import java.time.Duration;
@@ -45,15 +47,23 @@ public class AuthorizationServerConfiguration {
                                                                       final OAuth2PasswordAuthenticationProvider passwordAuthenticationProvider) throws Exception {
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 
-        // Configure the password grant
-        http.authenticationProvider(passwordAuthenticationProvider);
+        // Register password grant converter and provider on the token endpoint
+        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = http.getConfigurer(OAuth2AuthorizationServerConfigurer.class);
+        if (authorizationServerConfigurer != null) {
+            authorizationServerConfigurer
+                    .tokenEndpoint(tokenEndpoint -> tokenEndpoint
+                            .accessTokenRequestConverter(new PasswordAuthenticationConverter())
+                            .authenticationProvider(passwordAuthenticationProvider)
+                    );
+        }
 
-        return http.formLogin(Customizer.withDefaults()).build();
+        return http.build();
     }
 
     @Bean
     public RegisteredClientRepository registeredClientRepository(
             final JdbcTemplate jdbcTemplate,
+            final PasswordEncoder passwordEncoder,
             @Value("${app.auth.client-id:albedo-client}") final String clientId,
             @Value("${app.auth.client-secret:albedo-secret}") final String clientSecret,
             @Value("${app.auth.client-scopes:openid,profile,read,write}") final String scopes,
@@ -72,11 +82,12 @@ public class AuthorizationServerConfiguration {
 
         final ClientSettings clientSettings = ClientSettings.builder()
                 .requireAuthorizationConsent(false)
+                .requireProofKey(false)
                 .build();
 
         final RegisteredClient.Builder clientBuilder = RegisteredClient.withId(UUID.randomUUID().toString())
                 .clientId(clientId)
-                .clientSecret(clientSecret)
+                .clientSecret(passwordEncoder.encode(clientSecret))
 //                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
 //                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
@@ -104,9 +115,9 @@ public class AuthorizationServerConfiguration {
     }
 
     @Bean
-    public ProviderSettings providerSettings(
+    public AuthorizationServerSettings authorizationServerSettings(
             @Value("${app.auth.issuer:http://localhost:8080}") final String issuer) {
-        return ProviderSettings.builder()
+        return AuthorizationServerSettings.builder()
                 .issuer(issuer)
                 .build();
     }

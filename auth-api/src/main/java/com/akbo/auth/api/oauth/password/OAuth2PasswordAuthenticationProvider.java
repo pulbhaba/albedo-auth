@@ -36,10 +36,9 @@ public class OAuth2PasswordAuthenticationProvider implements org.springframework
 
     @Override
     public Authentication authenticate(Authentication authentication) throws OAuth2AuthenticationException {
-        if (!(authentication instanceof OAuth2PasswordAuthenticationToken)) {
+        if (!(authentication instanceof OAuth2PasswordAuthenticationToken passwordAuth)) {
             return null;
         }
-        OAuth2PasswordAuthenticationToken passwordAuth = (OAuth2PasswordAuthenticationToken) authentication;
 
         // Validate client
         Authentication clientPrincipal = getAuthenticatedClient(passwordAuth);
@@ -87,7 +86,7 @@ public class OAuth2PasswordAuthenticationProvider implements org.springframework
         OAuth2Authorization.Builder authorizationBuilder = OAuth2Authorization.withRegisteredClient(registeredClient)
                 .principalName(userAuth.getName())
                 .authorizationGrantType(new AuthorizationGrantType("password"))
-                .attribute(OAuth2Authorization.AUTHORIZED_SCOPE_ATTRIBUTE_NAME, authorizedScopes)
+                .authorizedScopes(authorizedScopes)
                 .token(accessToken);
         if (refreshToken != null) {
             authorizationBuilder.refreshToken(refreshToken);
@@ -111,10 +110,9 @@ public class OAuth2PasswordAuthenticationProvider implements org.springframework
 
     private Authentication getAuthenticatedClient(OAuth2PasswordAuthenticationToken authentication) {
         Authentication clientPrincipal = authentication.getPrincipal();
-        if (!(clientPrincipal instanceof OAuth2ClientAuthenticationToken)) {
+        if (!(clientPrincipal instanceof OAuth2ClientAuthenticationToken clientAuth)) {
             throw new OAuth2AuthenticationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_CLIENT));
         }
-        OAuth2ClientAuthenticationToken clientAuth = (OAuth2ClientAuthenticationToken) clientPrincipal;
         if (!clientAuth.isAuthenticated()) {
             throw new OAuth2AuthenticationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_CLIENT));
         }
@@ -122,6 +120,7 @@ public class OAuth2PasswordAuthenticationProvider implements org.springframework
     }
 
     private RegisteredClient getRegisteredClient(Authentication clientPrincipal) {
+        assert ((OAuth2ClientAuthenticationToken) clientPrincipal).getRegisteredClient() != null;
         String clientId = ((OAuth2ClientAuthenticationToken) clientPrincipal).getRegisteredClient().getClientId();
         RegisteredClient registeredClient = registeredClientRepository.findByClientId(clientId);
         if (registeredClient == null) {
@@ -144,6 +143,7 @@ public class OAuth2PasswordAuthenticationProvider implements org.springframework
         return requested;
     }
 
+    @SuppressWarnings("unused")
     private Map<String, Object> jwtClaims(Object token) {
         if (token instanceof Jwt) {
             return ((Jwt) token).getClaims();

@@ -23,9 +23,12 @@ public class BasicAuthWebSecurityConfiguration {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.authorizeRequests(requests -> requests
-                        .antMatchers("/admin/**", "/user/**").authenticated()
-                        .antMatchers("/public/**").permitAll())
+        http
+                .authorizeHttpRequests(requests -> requests
+                        .requestMatchers("/admin/**", "/user/**").authenticated()
+                        .requestMatchers("/public/**").permitAll()
+                        .anyRequest().authenticated()
+                )
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(withDefaults())
                 .httpBasic(withDefaults());
