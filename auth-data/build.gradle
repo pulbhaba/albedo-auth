@@ -1,16 +1,23 @@
 plugins {
     id 'java-library'
+    id 'io.spring.dependency-management' version '1.1.6'
 }
 
 // Java toolchain is configured in the root project's subprojects block
 
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.boot:spring-boot-dependencies:3.3.5"
+    }
+}
+
 dependencies {
     implementation project(":auth-client")
-    api 'org.springframework.boot:spring-boot-starter-security:3.3.5'
-    api 'org.springframework.boot:spring-boot-starter-data-jpa:3.3.5'
-    api 'org.springframework.data:spring-data-envers:3.3.5'
+    api 'org.springframework.boot:spring-boot-starter-security'
+    api 'org.springframework.boot:spring-boot-starter-data-jpa'
+    api 'org.springframework.data:spring-data-envers'
 
-    testImplementation 'org.springframework.boot:spring-boot-starter-test:3.3.5'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 tasks.named('test') {
