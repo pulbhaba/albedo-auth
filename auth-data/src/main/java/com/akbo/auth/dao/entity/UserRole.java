@@ -1,13 +1,12 @@
 package com.akbo.auth.dao.entity;
 
 import com.akbo.auth.dto.Role;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.envers.Audited;
 import org.springframework.security.core.GrantedAuthority;
-
-import javax.persistence.*;
 
 /**
  *

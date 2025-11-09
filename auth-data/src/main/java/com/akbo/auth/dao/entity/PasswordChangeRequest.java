@@ -1,12 +1,12 @@
 package com.akbo.auth.dao.entity;
 
+import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
-import org.joda.time.LocalDateTime;
 
-import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Setter
 @Getter
