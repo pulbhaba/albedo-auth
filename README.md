@@ -20,8 +20,8 @@ This repository is organized as a Gradle multi-module project.
 
 ## Key Features
 
-- Spring Boot 2.7.x, Java 11
-- OAuth2 Authorization Server (`spring-security-oauth2-authorization-server:0.2.0`)
+- Spring Boot 3.3.x, Java 21
+- OAuth2 Authorization Server (`spring-security-oauth2-authorization-server:1.3.x`)
 - Basic Auth for `/user/**` and `/admin/**` paths; `/public/**` is open
 - Token lifetimes and OAuth2 client registration configurable via properties/env vars
 - Pluggable password reset notification channels (email, SMS, log)
@@ -30,7 +30,7 @@ This repository is organized as a Gradle multi-module project.
 
 ## Prerequisites
 
-- Java 11+
+- Java 21 (Gradle toolchain is configured and can provision JDK 21 automatically)
 - Gradle (wrapper included)
 - MySQL 8.x running locally with a database named `auth` and credentials configured (see Configuration)
 
@@ -256,3 +256,13 @@ See the `docs/` directory for detailed guides:
 ## License
 
 This project is licensed under the terms of the `LICENSE` file included in this repository.
+
+## Environment & Compatibility
+
+- Java 21 is required. The Gradle toolchain in the root `build.gradle` enforces and can provision JDK 21 automatically:
+    - `java.toolchain.languageVersion = JavaLanguageVersion.of(21)` for all subprojects.
+- Spring Boot 3.3.x baseline. Notable implications compared to older Boot 2.x line:
+    - Jakarta namespace (`jakarta.*`) for JPA/Servlet APIs.
+    - Spring Authorization Server upgraded to 1.3.x.
+    - MySQL driver artifact is `com.mysql:mysql-connector-j`.
+- Tested with Gradle Wrapper as included in the repo; prefer `./gradlew` over a local Gradle install.
