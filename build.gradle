@@ -4,7 +4,7 @@ plugins {
 }
 
 version = '1.0.0-SNAPSHOT'
-project.buildDir = "$projectDir/build"
+layout.buildDirectory = file("$projectDir/build")
 group = 'com.akbo.auth'
 
 allprojects {
@@ -18,7 +18,15 @@ allprojects {
 
 subprojects {
     apply plugin: 'io.freefair.lombok'
-    buildDir = "$projectDir/build/java"
+    layout.buildDirectory = file("$projectDir/build")
+
+    // Use Java 21 toolchain across all modules
+    apply plugin: 'java'
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
 }
 
 

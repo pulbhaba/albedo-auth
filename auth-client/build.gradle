@@ -2,12 +2,10 @@ plugins {
     id 'java-library'
 }
 
-java {
-    sourceCompatibility = '11'
-}
+// Java toolchain is configured in the root project's subprojects block
 
 dependencies {
-    implementation "org.springframework:spring-web:5.3.31"
+    implementation "org.springframework:spring-web:6.2.0"
 }
 
 tasks.named('test') {
