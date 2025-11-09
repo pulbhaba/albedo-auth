@@ -89,6 +89,7 @@ public class AuthorizationServerConfiguration {
                 .clientId(clientId)
                 .clientSecret(passwordEncoder.encode(clientSecret))
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
                 .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
                 .authorizationGrantType(AuthorizationGrantType.PASSWORD)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
@@ -128,6 +129,11 @@ public class AuthorizationServerConfiguration {
     }
 
     @Bean
+    public org.springframework.security.oauth2.jwt.JwtEncoder jwtEncoder(JWKSource<SecurityContext> jwkSource) {
+        return new org.springframework.security.oauth2.jwt.NimbusJwtEncoder(jwkSource);
+    }
+
+    @Bean
     public OAuth2AuthorizationService authorizationService(final JdbcTemplate jdbcTemplate,
                                                            final RegisteredClientRepository registeredClientRepository) {
         return new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
@@ -144,9 +150,11 @@ public class AuthorizationServerConfiguration {
     public OAuth2PasswordAuthenticationProvider passwordAuthenticationProvider(
             @Lazy final AuthenticationManager authenticationManager,
             final OAuth2AuthorizationService authorizationService,
-            final RegisteredClientRepository registeredClientRepository) {
+            final RegisteredClientRepository registeredClientRepository,
+            final org.springframework.security.oauth2.jwt.JwtEncoder jwtEncoder,
+            final AuthorizationServerSettings authorizationServerSettings) {
         return new OAuth2PasswordAuthenticationProvider(
-                authenticationManager, authorizationService, registeredClientRepository);
+                authenticationManager, authorizationService, registeredClientRepository, jwtEncoder, authorizationServerSettings);
     }
 
     private static Duration parseDuration(final String value, final String propertyName) {
