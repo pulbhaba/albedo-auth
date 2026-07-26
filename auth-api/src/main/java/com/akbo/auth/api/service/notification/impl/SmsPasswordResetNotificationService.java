@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-@ConditionalOnProperty(prefix = "notification", name = "sms.enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "notification.sms.sns", name = "enabled", havingValue = "true")
 public class SmsPasswordResetNotificationService implements PasswordResetNotificationService {
 
     @Override
@@ -19,6 +19,11 @@ public class SmsPasswordResetNotificationService implements PasswordResetNotific
         }
 
         log.info("Password reset SMS would be sent to {} with token {}", user.getUsername(), encryptedKey);
-        // TODO: Integrate with an SMS provider (e.g., Twilio) when available.
+        // This class will be replaced/moved or used for a different SMS provider if needed.
+    }
+
+    @Override
+    public NotificationType getType() {
+        return NotificationType.SMS;
     }
 }

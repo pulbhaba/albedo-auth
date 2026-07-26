@@ -28,6 +28,11 @@ dependencies {
     implementation 'org.modelmapper:modelmapper:3.2.0'
     implementation 'org.sqids:sqids:0.1.0'
 
+    // Notification Providers
+    implementation 'com.sendgrid:sendgrid-java:4.10.2'
+    implementation 'software.amazon.awssdk:ses:2.29.0'
+    implementation 'software.amazon.awssdk:sns:2.29.0'
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2'

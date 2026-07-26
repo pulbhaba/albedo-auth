@@ -2,23 +2,31 @@ package com.akbo.auth.api.service.notification.impl;
 
 import com.akbo.auth.api.service.notification.PasswordResetNotificationService;
 import com.akbo.auth.dao.entity.User;
+import com.sendgrid.Method;
+import com.sendgrid.Request;
+import com.sendgrid.Response;
+import com.sendgrid.SendGrid;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
 
 import static java.util.Objects.isNull;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "notification.email", name = "provider", havingValue = "smtp")
-public class EmailPasswordResetNotificationService implements PasswordResetNotificationService {
+@ConditionalOnProperty(prefix = "notification.email", name = "provider", havingValue = "sendgrid")
+public class SendGridPasswordResetNotificationService implements PasswordResetNotificationService {
 
-    private final JavaMailSender mailSender;
+    @Value("${notification.email.sendgrid.api-key}")
+    private String apiKey;
 
     @Value("${notification.email.from-address}")
     private String fromAddress;
@@ -35,28 +43,36 @@ public class EmailPasswordResetNotificationService implements PasswordResetNotif
     @Override
     public void notify(final User user, final String encryptedKey) {
         if (isNull(user)) {
-            log.info("Skipping password reset email because the requested username does not exist.");
+            log.info("Skipping SendGrid email because user is null.");
             return;
         }
         if (isNull(user.getEmailAddress()) || user.getEmailAddress().isBlank()) {
-            log.info("Skipping password reset email because user {} does not have a registered email address.",
-                    user.getUsername());
+            log.info("Skipping SendGrid email because user {} does not have an email address.", user.getUsername());
             return;
         }
+
         final String resetLink = frontendUrl + "/password-reset/" + encryptedKey;
         final String recipientName = (user.getFirstName() != null && !user.getFirstName().isBlank())
                 ? user.getFirstName()
                 : user.getUsername();
         final String body = String.format(bodyTemplate, recipientName, resetLink);
 
-        final SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromAddress);
-        message.setTo(user.getEmailAddress());
-        message.setSubject(subject);
-        message.setText(body);
-        mailSender.send(message);
+        Email from = new Email(fromAddress);
+        Email to = new Email(user.getEmailAddress());
+        Content content = new Content("text/plain", body);
+        Mail mail = new Mail(from, subject, to, content);
 
-        log.info("Password reset email queued for {} via SMTP", user.getEmailAddress());
+        SendGrid sg = new SendGrid(apiKey);
+        Request request = new Request();
+        try {
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+            Response response = sg.api(request);
+            log.info("SendGrid response status code: {}", response.getStatusCode());
+        } catch (IOException ex) {
+            log.error("Failed to send email via SendGrid", ex);
+        }
     }
 
     @Override

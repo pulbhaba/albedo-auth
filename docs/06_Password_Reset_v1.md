@@ -11,10 +11,14 @@ to set a new password.
     - `GET /public/user/{username}/reset-password`
     - `POST /public/change-password/`
 - `PasswordServiceImpl` orchestrates token issuance, encryption, and password updates.
-- `PasswordResetNotificationService` interface defines the notification contract;
-  `EmailPasswordResetNotificationService`
-  is currently active and sends messages through the configured personal SMTP account.
-- `SmsPasswordResetNotificationService` is available but disabled until an SMS provider is selected.
+- `PasswordResetNotificationService` interface defines the notification contract.
+- The system uses a **Composite** pattern to support multiple active notification channels simultaneously.
+- Supported Providers:
+    - **SMTP:** Uses standard Spring Mail (`notification.email.provider=smtp`).
+    - **SendGrid:** Uses SendGrid API (`notification.email.provider=sendgrid`).
+    - **AWS SES:** Uses Amazon Simple Email Service (`notification.email.provider=ses`).
+    - **AWS SNS:** Uses Amazon Simple Notification Service for SMS (`notification.sms.provider=sns`).
+    - **Logging:** Fallback/Development provider that logs the token to the console.
 - `PasswordChangeRequest` entity (`auth-data/src/main/java/com/akbo/auth/dao/entity/PasswordChangeRequest.java`)
   persists reset attempts with auditing enabled.
 - `PasswordTools` (`auth-client/src/main/java/com/akbo/auth/util/PasswordTools.java`) handles AES encryption/decryption.
@@ -86,10 +90,10 @@ INFO  PasswordServiceImpl - The encrypted key for password reset is: NsAq4th5PwX
 
 ## Operational Considerations
 
-- **Delivery channel:** Email delivery is active when `notification.email.enabled=true`. Provide SMTP details (e.g.,
-  Gmail) via `MAIL_*`
-  environment variables so the application can authenticate with the personal account. When disabled, the fallback
-  implementation only logs the token.
+- **Delivery channel:** Enable a single provider by setting `notification.active-provider` to `logging`, `email`, or `sms`.
+  - For `email`, configure the sub-provider via `notification.email.provider` (`smtp`, `ses`, or `sendgrid`).
+  - For `sms`, configure the sub-provider via `notification.sms.provider` (currently only `sns`).
+- **Reset Link:** The notification sends a link in the format `https://{frontend-url}/password-reset/{encryptedKey}`. Configure the base via `notification.frontend-url`.
 - **Token lifetime:** The current implementation relies on the repository query to exclude expired tokens, but no
   automatic expiry timestamp is set yet. Consider extending the entity to record an expiration instant.
 - **Security logging:** Logs include the encrypted token. Rotate logs or mask tokens before moving to production.

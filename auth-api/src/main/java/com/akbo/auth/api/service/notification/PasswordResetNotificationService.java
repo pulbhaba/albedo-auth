@@ -14,5 +14,14 @@ public interface PasswordResetNotificationService {
      * @param encryptedKey the encrypted token that allows the user to complete the reset flow.
      */
     void notify(User user, String encryptedKey);
+
+    /**
+     * @return the type of notification (e.g., EMAIL, SMS)
+     */
+    NotificationType getType();
+
+    enum NotificationType {
+        EMAIL, SMS
+    }
 }
 

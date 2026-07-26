@@ -19,7 +19,7 @@ class EmailPasswordResetNotificationServiceTest {
         
         ReflectionTestUtils.setField(service, "fromAddress", "from@example.com");
         ReflectionTestUtils.setField(service, "subject", "Subject");
-        ReflectionTestUtils.setField(service, "resetUrl", "http://reset/");
+        ReflectionTestUtils.setField(service, "frontendUrl", "http://frontend");
         ReflectionTestUtils.setField(service, "bodyTemplate", "%s %s");
 
         User user = new User();
@@ -28,7 +28,10 @@ class EmailPasswordResetNotificationServiceTest {
         
         service.notify(user, "token123");
         
-        verify(mailSender).send(any(SimpleMailMessage.class));
+        ArgumentCaptor<SimpleMailMessage> messageCaptor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mailSender).send(messageCaptor.capture());
+        SimpleMailMessage sentMessage = messageCaptor.getValue();
+        assertTrue(sentMessage.getText().contains("http://frontend/password-reset/token123"));
     }
 
     @Test
