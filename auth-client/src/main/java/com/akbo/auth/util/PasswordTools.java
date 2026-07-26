@@ -1,10 +1,10 @@
 package com.akbo.auth.util;
 
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Base64;
-import java.util.Random;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -35,9 +35,9 @@ public class PasswordTools {
     public static String generateRandomString() {
         String SALTCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
         StringBuilder salt = new StringBuilder();
-        Random rnd = new Random();
+        SecureRandom rnd = new SecureRandom();
         while (salt.length() < 18) { // length of the random string.
-            int index = (int) (rnd.nextFloat() * SALTCHARS.length());
+            int index = rnd.nextInt(SALTCHARS.length());
             salt.append(SALTCHARS.charAt(index));
         }
         return salt.toString();
@@ -62,9 +62,15 @@ public class PasswordTools {
         Cipher cipher;
         try {
             cipher = Cipher.getInstance(algorithm);
-            cipher.init(Cipher.ENCRYPT_MODE, key, getIv());
+            byte[] iv = new byte[cipher.getBlockSize()];
+            new SecureRandom().nextBytes(iv);
+            IvParameterSpec ivSpec = new IvParameterSpec(iv);
+            cipher.init(Cipher.ENCRYPT_MODE, key, ivSpec);
             byte[] cipherText = cipher.doFinal(input.getBytes());
-            return Base64.getEncoder().encodeToString(cipherText);
+            byte[] combined = new byte[iv.length + cipherText.length];
+            System.arraycopy(iv, 0, combined, 0, iv.length);
+            System.arraycopy(cipherText, 0, combined, iv.length, cipherText.length);
+            return Base64.getEncoder().encodeToString(combined);
         } catch (Exception e) {
             throw new RuntimeException("Encryption failed.", e);
         }
@@ -75,9 +81,18 @@ public class PasswordTools {
 
         Cipher cipher;
         try {
+            byte[] combined = Base64.getDecoder().decode(cipherText);
             cipher = Cipher.getInstance(algorithm);
-            cipher.init(Cipher.DECRYPT_MODE, key, getIv());
-            byte[] plainText = cipher.doFinal(Base64.getDecoder().decode(cipherText));
+            int ivLength = cipher.getBlockSize();
+            byte[] iv = new byte[ivLength];
+            System.arraycopy(combined, 0, iv, 0, ivLength);
+            IvParameterSpec ivSpec = new IvParameterSpec(iv);
+
+            byte[] cipherTextActual = new byte[combined.length - ivLength];
+            System.arraycopy(combined, ivLength, cipherTextActual, 0, cipherTextActual.length);
+
+            cipher.init(Cipher.DECRYPT_MODE, key, ivSpec);
+            byte[] plainText = cipher.doFinal(cipherTextActual);
             return new String(plainText);
         } catch (Exception e) {
             throw new RuntimeException("Decryption failed.", e);

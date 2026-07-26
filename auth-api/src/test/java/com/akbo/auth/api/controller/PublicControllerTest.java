@@ -11,7 +11,6 @@ import com.akbo.auth.api.service.PasswordService;
 import com.akbo.auth.api.service.UserService;
 import com.akbo.auth.aspect.GlobalExceptionHandler;
 import com.akbo.auth.dto.PasswordChangeDto;
-import com.akbo.auth.dto.Role;
 import com.akbo.auth.dto.UserDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,8 +23,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
-import java.util.Set;
 
 @ExtendWith(MockitoExtension.class)
 class PublicControllerTest {
@@ -49,21 +46,13 @@ class PublicControllerTest {
     }
 
     @Test
-    void changePassword_returnsUserDto() throws Exception {
+    void changePassword_returnsSuccessMessage() throws Exception {
         PasswordChangeDto dto = new PasswordChangeDto();
         dto.setRequestKey("req-123");
         dto.setNewPassword("new");
 
-        UserDto resp = new UserDto();
-        resp.setId(1L);
-        resp.setUsername("alice");
-        resp.setFirstName("Alice");
-        resp.setLastName("Liddell");
-        resp.setEmailAddress("alice@example.com");
-        resp.setEnabled(true);
-        resp.setRoles(Set.of(Role.ROLE_USER));
-
-        when(passwordService.changePassword(any(PasswordChangeDto.class))).thenReturn(resp);
+        when(passwordService.changePassword(any(PasswordChangeDto.class)))
+                .thenReturn(java.util.Map.of("message", "Password successfully changed."));
 
         mockMvc.perform(
                         post("/public/change-password/")
@@ -71,8 +60,7 @@ class PublicControllerTest {
                                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.username").value("alice"))
-                .andExpect(jsonPath("$.firstName").value("Alice"));
+                .andExpect(jsonPath("$.message").value("Password successfully changed."));
 
         ArgumentCaptor<PasswordChangeDto> captor = ArgumentCaptor.forClass(PasswordChangeDto.class);
         verify(passwordService).changePassword(captor.capture());

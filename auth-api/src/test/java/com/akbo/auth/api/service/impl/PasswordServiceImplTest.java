@@ -9,7 +9,6 @@ import com.akbo.auth.dao.entity.User;
 import com.akbo.auth.dao.repository.PasswordResetRequestRepository;
 import com.akbo.auth.dao.repository.UserRepository;
 import com.akbo.auth.dto.PasswordChangeDto;
-import com.akbo.auth.dto.UserDto;
 import com.akbo.auth.exception.UnauthorizedException;
 import com.akbo.auth.util.PasswordTools;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +19,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.crypto.SecretKey;
@@ -48,6 +49,8 @@ class PasswordServiceImplTest {
                         passwordEncoder,
                         symKey,
                         passwordResetNotificationService);
+        org.springframework.test.util.ReflectionTestUtils.setField(
+                passwordService, "tokenTtl", "PT15M");
     }
 
     @Test
@@ -84,20 +87,42 @@ class PasswordServiceImplTest {
 
         PasswordChangeRequest resetRequest = new PasswordChangeRequest();
         resetRequest.setUser(user);
+        resetRequest.setCreatedTime(LocalDateTime.now());
 
         when(passwordResetRequestRepository.findOneByIdAndRandomStringNotExpired(
                         requestId, randomString))
                 .thenReturn(Optional.of(resetRequest));
         when(passwordEncoder.encode("newPass")).thenReturn("encodedNewPass");
         when(userRepository.save(user)).thenReturn(user);
-        when(modelMapper.map(user, UserDto.class)).thenReturn(new UserDto());
 
-        UserDto result = passwordService.changePassword(requestDto);
+        Map<String, String> result = passwordService.changePassword(requestDto);
 
         assertNotNull(result);
+        assertEquals("Password successfully changed.", result.get("message"));
         assertTrue(resetRequest.getPasswordChanged());
         verify(userRepository).save(user);
         verify(passwordResetRequestRepository).save(resetRequest);
+    }
+
+    @Test
+    void changePassword_expired() {
+        PasswordChangeDto requestDto = new PasswordChangeDto();
+        requestDto.setNewPassword("newPass");
+
+        String randomString = "RANDOM123456789012";
+        Long requestId = 100L;
+        String rawKey = requestId + "|" + randomString;
+        String encryptedKey = PasswordTools.encrypt(PasswordTools.urlAlgorithm, rawKey, symKey);
+        requestDto.setRequestKey(encryptedKey);
+
+        PasswordChangeRequest resetRequest = new PasswordChangeRequest();
+        resetRequest.setCreatedTime(LocalDateTime.now().minusMinutes(30));
+
+        when(passwordResetRequestRepository.findOneByIdAndRandomStringNotExpired(
+                        requestId, randomString))
+                .thenReturn(Optional.of(resetRequest));
+
+        assertThrows(UnauthorizedException.class, () -> passwordService.changePassword(requestDto));
     }
 
     @Test

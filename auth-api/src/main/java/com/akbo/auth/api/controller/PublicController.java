@@ -7,6 +7,8 @@ import com.akbo.auth.dto.UserDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("public/")
@@ -15,7 +17,8 @@ public class PublicController {
     private final UserService userService;
 
     @PostMapping("change-password/")
-    public UserDto changePassword(@RequestBody final PasswordChangeDto passwordChangeDto) {
+    public Map<String, String> changePassword(
+            @RequestBody final PasswordChangeDto passwordChangeDto) {
         return passwordService.changePassword(passwordChangeDto);
     }
 
