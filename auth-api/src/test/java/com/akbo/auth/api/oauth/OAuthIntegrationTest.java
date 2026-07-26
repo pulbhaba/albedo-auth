@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
         classes = com.akbo.auth.api.AuthApplication.class)
 @AutoConfigureMockMvc
 @TestPropertySource(locations = "classpath:application-test.properties")
+@org.springframework.test.annotation.DirtiesContext
 class OAuthIntegrationTest {
 
     @Autowired MockMvc mockMvc;

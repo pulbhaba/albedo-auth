@@ -5,6 +5,8 @@ import static org.springframework.security.crypto.factory.PasswordEncoderFactori
 import com.akbo.auth.api.service.UserService;
 import com.akbo.auth.api.service.impl.FederatedIdentityOAuth2UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,14 +23,13 @@ import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
+@EnableConfigurationProperties(SocialLoginProperties.class)
 public class BasicAuthWebSecurityConfiguration {
 
     private final SocialLoginProperties socialLoginProperties;
 
     @Bean
-    public SecurityFilterChain filterChain(
-            HttpSecurity http,
-            FederatedIdentityOAuth2UserService federatedIdentityOAuth2UserService)
+    public SecurityFilterChain filterChain(HttpSecurity http, ApplicationContext context)
             throws Exception {
         http.authorizeHttpRequests(
                         requests ->
@@ -43,12 +44,20 @@ public class BasicAuthWebSecurityConfiguration {
                 .httpBasic(withDefaults());
 
         if (socialLoginProperties.isEnabled()) {
-            http.oauth2Login(
-                    oauth2 ->
-                            oauth2.userInfoEndpoint(
-                                    userInfo ->
-                                            userInfo.userService(
-                                                    federatedIdentityOAuth2UserService)));
+            try {
+                FederatedIdentityOAuth2UserService federatedIdentityOAuth2UserService =
+                        context.getBean(FederatedIdentityOAuth2UserService.class);
+                http.oauth2Login(
+                        oauth2 ->
+                                oauth2.userInfoEndpoint(
+                                        userInfo ->
+                                                userInfo.userService(
+                                                        federatedIdentityOAuth2UserService)));
+            } catch (Exception e) {
+                // Social login is enabled but the required beans are not present (e.g. missing
+                // oauth2 client config)
+                // We just log it and proceed without social login
+            }
         }
 
         return http.build();

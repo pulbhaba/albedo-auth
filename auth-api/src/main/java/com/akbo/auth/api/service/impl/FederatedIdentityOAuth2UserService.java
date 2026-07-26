@@ -7,6 +7,7 @@ import com.akbo.auth.dao.repository.UserRepository;
 import com.akbo.auth.dao.repository.UserRoleRepository;
 import com.akbo.auth.dto.Role;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
@@ -22,6 +23,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "app.auth.social-login.enabled", havingValue = "true")
 public class FederatedIdentityOAuth2UserService
         implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
