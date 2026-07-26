@@ -52,11 +52,10 @@ class OAuthIntegrationTest {
     @Test
     void tokenEndpoint_clientCredentials_authorized_returnsAccessToken() throws Exception {
         mockMvc.perform(post("/oauth2/token")
+                        .with(httpBasic("test-client", "test-secret"))
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .accept(MediaType.APPLICATION_JSON)
                         .param("grant_type", "client_credentials")
-                        .param("client_id", "test-client")
-                        .param("client_secret", "test-secret")
                         .param("scope", "read"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))

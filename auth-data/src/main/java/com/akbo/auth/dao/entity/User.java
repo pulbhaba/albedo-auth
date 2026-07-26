@@ -6,7 +6,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
+import java.util.Map;
 import java.util.Set;
 
 @Setter
@@ -15,7 +17,7 @@ import java.util.Set;
 @Table(name = "users", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"username"})})
 @EqualsAndHashCode(callSuper = true)
-public class User extends AbstractEntity implements UserDetails {
+public class User extends AbstractEntity implements UserDetails, OAuth2User {
 
     @Getter
     private String username;
@@ -36,6 +38,19 @@ public class User extends AbstractEntity implements UserDetails {
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role"))
     private Set<UserRole> authorities;
+
+    @Transient
+    private Map<String, Object> attributes;
+
+    @Override
+    public Map<String, Object> getAttributes() {
+        return attributes;
+    }
+
+    @Override
+    public String getName() {
+        return username;
+    }
 
     @Override
     public boolean isAccountNonExpired() {
