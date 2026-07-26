@@ -12,21 +12,15 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "app.auth.social-login")
 public class SocialLoginProperties {
 
-    /**
-     * Whether social login is enabled globally.
-     */
+    /** Whether social login is enabled globally. */
     private boolean enabled = true;
 
-    /**
-     * Configuration per provider.
-     */
+    /** Configuration per provider. */
     private Map<String, ProviderProperties> providers = new HashMap<>();
 
     @Data
     public static class ProviderProperties {
-        /**
-         * Whether this provider is enabled.
-         */
+        /** Whether this provider is enabled. */
         private boolean enabled = true;
     }
 }

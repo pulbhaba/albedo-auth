@@ -1,5 +1,6 @@
 package com.akbo.auth.api.controller;
 
+import static org.springframework.http.ResponseEntity.ok;
 import com.akbo.auth.api.service.UserService;
 import com.akbo.auth.dto.UserDto;
 import lombok.RequiredArgsConstructor;
@@ -8,8 +9,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import static org.springframework.http.ResponseEntity.ok;
 
 @RestController
 @RequestMapping("user/")

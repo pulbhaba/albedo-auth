@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'io.freefair.lombok' version "8.6"
+    id 'com.diffplug.spotless' version '6.25.0'
 }
 
 version = '1.0.0-SNAPSHOT'
@@ -54,5 +55,17 @@ subprojects {
             xml.required = true
             html.required = true
         }
+    }
+}
+
+spotless {
+    java {
+        target '**/src/*/java/**/*.java'
+        googleJavaFormat('1.19.2').aosp().reflowLongStrings().formatJavadoc(true)
+        importOrder('static', 'com.akbo', '', 'java', 'javax')
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+        replaceRegex 'Remove extra separation in import group', '^(import [^;]+;)\\n\\n(import (?!java\\.|javax\\.)[^;]+;)', '$1\n$2'
     }
 }

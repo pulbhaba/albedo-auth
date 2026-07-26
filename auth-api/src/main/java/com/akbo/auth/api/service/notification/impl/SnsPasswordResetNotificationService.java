@@ -1,5 +1,6 @@
 package com.akbo.auth.api.service.notification.impl;
 
+import static java.util.Objects.isNull;
 import com.akbo.auth.api.service.notification.PasswordResetNotificationService;
 import com.akbo.auth.dao.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -13,8 +14,6 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
 import software.amazon.awssdk.services.sns.model.SnsException;
-
-import static java.util.Objects.isNull;
 
 @Slf4j
 @Service
@@ -36,10 +35,11 @@ public class SnsPasswordResetNotificationService implements PasswordResetNotific
 
     @Override
     public void notify(final User user, final String encryptedKey) {
-        // Assume user has a phone number field or use username as a fallback if it looks like a phone number
+        // Assume user has a phone number field or use username as a fallback if it looks like a
+        // phone number
         // For this implementation, we'll check if we have a way to get the phone number.
         // The current User entity has phoneNumber field now.
-        String phoneNumber = user.getPhoneNumber(); 
+        String phoneNumber = user.getPhoneNumber();
 
         if (isNull(user) || isNull(phoneNumber) || phoneNumber.isBlank()) {
             log.info("Skipping SNS SMS because user or phone number is missing.");
@@ -49,15 +49,16 @@ public class SnsPasswordResetNotificationService implements PasswordResetNotific
         final String resetLink = frontendUrl + "/password-reset/" + encryptedKey;
         final String message = "Reset your password: " + resetLink;
 
-        try (SnsClient client = SnsClient.builder()
-                .region(Region.of(awsRegion))
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey)))
-                .build()) {
+        try (SnsClient client =
+                SnsClient.builder()
+                        .region(Region.of(awsRegion))
+                        .credentialsProvider(
+                                StaticCredentialsProvider.create(
+                                        AwsBasicCredentials.create(accessKey, secretKey)))
+                        .build()) {
 
-            PublishRequest request = PublishRequest.builder()
-                    .message(message)
-                    .phoneNumber(phoneNumber)
-                    .build();
+            PublishRequest request =
+                    PublishRequest.builder().message(message).phoneNumber(phoneNumber).build();
 
             client.publish(request);
             log.info("Password reset SMS sent via AWS SNS to {}", phoneNumber);

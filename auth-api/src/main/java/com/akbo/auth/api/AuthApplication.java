@@ -1,6 +1,5 @@
 package com.akbo.auth.api;
 
-
 import com.akbo.auth.dao.entity.UserRole;
 import com.akbo.auth.dao.repository.UserRoleRepository;
 import com.akbo.auth.dto.Role;
@@ -27,8 +26,8 @@ public class AuthApplication {
     @Bean
     public CommandLineRunner demoData(UserRoleRepository userRoleRepository) {
         return args -> {
-            Arrays.stream(Role.values()).forEach(role -> userRoleRepository.save(new UserRole(role)));
+            Arrays.stream(Role.values())
+                    .forEach(role -> userRoleRepository.save(new UserRole(role)));
         };
     }
-
 }

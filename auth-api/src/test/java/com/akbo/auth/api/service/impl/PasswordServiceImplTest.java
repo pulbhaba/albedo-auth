@@ -1,5 +1,8 @@
 package com.akbo.auth.api.service.impl;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 import com.akbo.auth.api.service.notification.PasswordResetNotificationService;
 import com.akbo.auth.dao.entity.PasswordChangeRequest;
 import com.akbo.auth.dao.entity.User;
@@ -17,26 +20,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import javax.crypto.SecretKey;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import javax.crypto.SecretKey;
 
 @ExtendWith(MockitoExtension.class)
 class PasswordServiceImplTest {
 
-    @Mock
-    private PasswordResetRequestRepository passwordResetRequestRepository;
-    @Mock
-    private UserRepository userRepository;
-    @Mock
-    private ModelMapper modelMapper;
-    @Mock
-    private PasswordEncoder passwordEncoder;
-    @Mock
-    private PasswordResetNotificationService passwordResetNotificationService;
+    @Mock private PasswordResetRequestRepository passwordResetRequestRepository;
+    @Mock private UserRepository userRepository;
+    @Mock private ModelMapper modelMapper;
+    @Mock private PasswordEncoder passwordEncoder;
+    @Mock private PasswordResetNotificationService passwordResetNotificationService;
 
     private SecretKey symKey;
 
@@ -45,14 +40,14 @@ class PasswordServiceImplTest {
     @BeforeEach
     void setUp() {
         symKey = PasswordTools.getKeyFromPassword("test-password", "test-salt");
-        passwordService = new PasswordServiceImpl(
-                passwordResetRequestRepository,
-                userRepository,
-                modelMapper,
-                passwordEncoder,
-                symKey,
-                passwordResetNotificationService
-        );
+        passwordService =
+                new PasswordServiceImpl(
+                        passwordResetRequestRepository,
+                        userRepository,
+                        modelMapper,
+                        passwordEncoder,
+                        symKey,
+                        passwordResetNotificationService);
     }
 
     @Test
@@ -60,11 +55,12 @@ class PasswordServiceImplTest {
         User user = new User();
         user.setUsername("testuser");
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
-        
+
         PasswordChangeRequest request = new PasswordChangeRequest();
         request.setId(100L);
         request.setRandomString("RANDOM123456789012");
-        when(passwordResetRequestRepository.save(any(PasswordChangeRequest.class))).thenReturn(request);
+        when(passwordResetRequestRepository.save(any(PasswordChangeRequest.class)))
+                .thenReturn(request);
 
         passwordService.RequestPasswordChange("testuser");
 
@@ -76,7 +72,7 @@ class PasswordServiceImplTest {
     void changePassword_success() {
         PasswordChangeDto requestDto = new PasswordChangeDto();
         requestDto.setNewPassword("newPass");
-        
+
         String randomString = "RANDOM123456789012";
         Long requestId = 100L;
         String rawKey = requestId + "|" + randomString;
@@ -85,11 +81,12 @@ class PasswordServiceImplTest {
 
         User user = new User();
         user.setUsername("testuser");
-        
+
         PasswordChangeRequest resetRequest = new PasswordChangeRequest();
         resetRequest.setUser(user);
-        
-        when(passwordResetRequestRepository.findOneByIdAndRandomStringNotExpired(requestId, randomString))
+
+        when(passwordResetRequestRepository.findOneByIdAndRandomStringNotExpired(
+                        requestId, randomString))
                 .thenReturn(Optional.of(resetRequest));
         when(passwordEncoder.encode("newPass")).thenReturn("encodedNewPass");
         when(userRepository.save(user)).thenReturn(user);
@@ -106,8 +103,9 @@ class PasswordServiceImplTest {
     @Test
     void changePassword_invalidRequest() {
         PasswordChangeDto requestDto = new PasswordChangeDto();
-        requestDto.setRequestKey(PasswordTools.encrypt(PasswordTools.urlAlgorithm, "1|wrong", symKey));
-        
+        requestDto.setRequestKey(
+                PasswordTools.encrypt(PasswordTools.urlAlgorithm, "1|wrong", symKey));
+
         when(passwordResetRequestRepository.findOneByIdAndRandomStringNotExpired(1L, "wrong"))
                 .thenReturn(Optional.empty());
 

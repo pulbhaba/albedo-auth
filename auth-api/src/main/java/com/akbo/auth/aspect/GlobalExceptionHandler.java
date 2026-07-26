@@ -18,5 +18,4 @@ public class GlobalExceptionHandler {
         error.putItem("stackTrace", e.getStackTrace());
         return new ResponseEntity<>(error, e.getStatusCode());
     }
-
 }

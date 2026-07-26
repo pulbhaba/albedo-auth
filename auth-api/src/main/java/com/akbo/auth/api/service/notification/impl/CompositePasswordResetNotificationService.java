@@ -43,12 +43,13 @@ public class CompositePasswordResetNotificationService implements PasswordResetN
         }
 
         final NotificationType finalTargetType = targetType;
-        List<PasswordResetNotificationService> candidates = notificationServices.stream()
-                .filter(s -> s.getType() == finalTargetType)
-                .toList();
+        List<PasswordResetNotificationService> candidates =
+                notificationServices.stream().filter(s -> s.getType() == finalTargetType).toList();
 
         if (candidates.isEmpty()) {
-            log.warn("No active notification providers found for type {}, falling back to logging.", finalTargetType);
+            log.warn(
+                    "No active notification providers found for type {}, falling back to logging.",
+                    finalTargetType);
             loggingService.notify(user, encryptedKey);
             return;
         }

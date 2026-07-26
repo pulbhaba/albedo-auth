@@ -3,8 +3,6 @@ package com.akbo.auth.api.jose;
 import com.nimbusds.jose.jwk.OctetSequenceKey;
 import com.nimbusds.jose.jwk.RSAKey;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -12,9 +10,11 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.UUID;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+
 public class Keys {
-    private Keys() {
-    }
+    private Keys() {}
 
     private static KeyPair generateRsaKey() {
         try {
@@ -32,9 +32,7 @@ public class Keys {
 
     public static OctetSequenceKey getHs256Jwk(final String secret) {
         SecretKey secretKey = getSecretKeyFromString(secret);
-        return new OctetSequenceKey.Builder(secretKey)
-                .keyID(UUID.randomUUID().toString())
-                .build();
+        return new OctetSequenceKey.Builder(secretKey).keyID(UUID.randomUUID().toString()).build();
     }
 
     public static RSAKey getRsaJwk() {

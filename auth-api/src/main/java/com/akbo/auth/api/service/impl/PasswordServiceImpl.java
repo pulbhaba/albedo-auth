@@ -31,19 +31,26 @@ public class PasswordServiceImpl implements PasswordService {
 
     @Override
     public UserDto changePassword(final PasswordChangeDto request) {
-        final String requestIdWithStr = PasswordTools.decrypt(PasswordTools.urlAlgorithm, request.getRequestKey(), symKey);
+        final String requestIdWithStr =
+                PasswordTools.decrypt(PasswordTools.urlAlgorithm, request.getRequestKey(), symKey);
         final String[] idAndString = requestIdWithStr.split("\\|");
         final var requestId = Long.valueOf(idAndString[0]);
         final var randomString = idAndString[1];
-        return passwordResetRequestRepository.findOneByIdAndRandomStringNotExpired(requestId, randomString)
-                .map(resetRequest -> {
-                    final var user = resetRequest.getUser();
-                    user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-                    final var savedUser = userRepository.save(user);
-                    resetRequest.setPasswordChanged(true);
-                    passwordResetRequestRepository.save(resetRequest);
-                    return modelMapper.map(savedUser, UserDto.class);
-                }).orElseThrow(() -> new UnauthorizedException("Your request to change password is invalid."));
+        return passwordResetRequestRepository
+                .findOneByIdAndRandomStringNotExpired(requestId, randomString)
+                .map(
+                        resetRequest -> {
+                            final var user = resetRequest.getUser();
+                            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+                            final var savedUser = userRepository.save(user);
+                            resetRequest.setPasswordChanged(true);
+                            passwordResetRequestRepository.save(resetRequest);
+                            return modelMapper.map(savedUser, UserDto.class);
+                        })
+                .orElseThrow(
+                        () ->
+                                new UnauthorizedException(
+                                        "Your request to change password is invalid."));
     }
 
     @Override
@@ -54,8 +61,10 @@ public class PasswordServiceImpl implements PasswordService {
         request.setRandomString(PasswordTools.generateRandomString());
 
         final var savedRequest = passwordResetRequestRepository.save(request);
-        final var idAndString = String.join("|", savedRequest.getId().toString(), savedRequest.getRandomString());
-        final var encryptedKey = PasswordTools.encrypt(PasswordTools.urlAlgorithm, idAndString, symKey);
+        final var idAndString =
+                String.join("|", savedRequest.getId().toString(), savedRequest.getRandomString());
+        final var encryptedKey =
+                PasswordTools.encrypt(PasswordTools.urlAlgorithm, idAndString, symKey);
 
         passwordResetNotificationService.notify(userOptional.orElse(null), encryptedKey);
     }

@@ -1,5 +1,12 @@
 package com.akbo.auth.api.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import com.akbo.auth.api.service.PasswordService;
 import com.akbo.auth.api.service.UserService;
 import com.akbo.auth.aspect.GlobalExceptionHandler;
@@ -20,14 +27,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Set;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 @ExtendWith(MockitoExtension.class)
 class PublicControllerTest {
 
@@ -35,20 +34,18 @@ class PublicControllerTest {
 
     ObjectMapper objectMapper = new ObjectMapper();
 
-    @Mock
-    PasswordService passwordService;
+    @Mock PasswordService passwordService;
 
-    @Mock
-    UserService userService;
+    @Mock UserService userService;
 
-    @InjectMocks
-    PublicController controller;
+    @InjectMocks PublicController controller;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(controller)
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
+        mockMvc =
+                MockMvcBuilders.standaloneSetup(controller)
+                        .setControllerAdvice(new GlobalExceptionHandler())
+                        .build();
     }
 
     @Test
@@ -68,9 +65,10 @@ class PublicControllerTest {
 
         when(passwordService.changePassword(any(PasswordChangeDto.class))).thenReturn(resp);
 
-        mockMvc.perform(post("/public/change-password/")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+        mockMvc.perform(
+                        post("/public/change-password/")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.username").value("alice"))
@@ -101,9 +99,10 @@ class PublicControllerTest {
 
         when(userService.createUser(any(UserDto.class))).thenReturn(saved);
 
-        mockMvc.perform(post("/public/user/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
+        mockMvc.perform(
+                        post("/public/user/register")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(42))
                 .andExpect(jsonPath("$.username").value("charlie"));

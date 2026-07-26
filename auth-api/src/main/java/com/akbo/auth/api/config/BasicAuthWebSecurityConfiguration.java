@@ -1,5 +1,7 @@
 package com.akbo.auth.api.config;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+import static org.springframework.security.crypto.factory.PasswordEncoderFactories.createDelegatingPasswordEncoder;
 import com.akbo.auth.api.service.UserService;
 import com.akbo.auth.api.service.impl.FederatedIdentityOAuth2UserService;
 import lombok.RequiredArgsConstructor;
@@ -17,36 +19,38 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-import static org.springframework.security.config.Customizer.withDefaults;
-import static org.springframework.security.crypto.factory.PasswordEncoderFactories.createDelegatingPasswordEncoder;
-
 @Configuration
 @RequiredArgsConstructor
 public class BasicAuthWebSecurityConfiguration {
-    
+
     private final SocialLoginProperties socialLoginProperties;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http,
-                                           FederatedIdentityOAuth2UserService federatedIdentityOAuth2UserService) throws Exception {
-        http
-                .authorizeHttpRequests(requests -> requests
-                        .requestMatchers("/admin/**", "/user/**").authenticated()
-                        .requestMatchers("/public/**", "/login/**", "/oauth2/**").permitAll()
-                        .anyRequest().authenticated()
-                )
+    public SecurityFilterChain filterChain(
+            HttpSecurity http,
+            FederatedIdentityOAuth2UserService federatedIdentityOAuth2UserService)
+            throws Exception {
+        http.authorizeHttpRequests(
+                        requests ->
+                                requests.requestMatchers("/admin/**", "/user/**")
+                                        .authenticated()
+                                        .requestMatchers("/public/**", "/login/**", "/oauth2/**")
+                                        .permitAll()
+                                        .anyRequest()
+                                        .authenticated())
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(withDefaults())
                 .httpBasic(withDefaults());
-        
+
         if (socialLoginProperties.isEnabled()) {
-            http.oauth2Login(oauth2 -> oauth2
-                    .userInfoEndpoint(userInfo -> userInfo
-                            .userService(federatedIdentityOAuth2UserService)
-                    )
-            );
+            http.oauth2Login(
+                    oauth2 ->
+                            oauth2.userInfoEndpoint(
+                                    userInfo ->
+                                            userInfo.userService(
+                                                    federatedIdentityOAuth2UserService)));
         }
-        
+
         return http.build();
     }
 
@@ -56,10 +60,10 @@ public class BasicAuthWebSecurityConfiguration {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(
-            HttpSecurity http,
-            UserService userService) throws Exception {
-        AuthenticationManagerBuilder builder = http.getSharedObject(AuthenticationManagerBuilder.class);
+    public AuthenticationManager authenticationManager(HttpSecurity http, UserService userService)
+            throws Exception {
+        AuthenticationManagerBuilder builder =
+                http.getSharedObject(AuthenticationManagerBuilder.class);
         builder.userDetailsService(userService).passwordEncoder(passwordEncoder());
         return builder.build();
     }
@@ -74,5 +78,4 @@ public class BasicAuthWebSecurityConfiguration {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-
 }

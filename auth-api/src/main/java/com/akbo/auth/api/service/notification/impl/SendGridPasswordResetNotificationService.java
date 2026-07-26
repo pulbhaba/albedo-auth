@@ -1,5 +1,6 @@
 package com.akbo.auth.api.service.notification.impl;
 
+import static java.util.Objects.isNull;
 import com.akbo.auth.api.service.notification.PasswordResetNotificationService;
 import com.akbo.auth.dao.entity.User;
 import com.sendgrid.Method;
@@ -16,8 +17,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-
-import static java.util.Objects.isNull;
 
 @Slf4j
 @Service
@@ -47,14 +46,17 @@ public class SendGridPasswordResetNotificationService implements PasswordResetNo
             return;
         }
         if (isNull(user.getEmailAddress()) || user.getEmailAddress().isBlank()) {
-            log.info("Skipping SendGrid email because user {} does not have an email address.", user.getUsername());
+            log.info(
+                    "Skipping SendGrid email because user {} does not have an email address.",
+                    user.getUsername());
             return;
         }
 
         final String resetLink = frontendUrl + "/password-reset/" + encryptedKey;
-        final String recipientName = (user.getFirstName() != null && !user.getFirstName().isBlank())
-                ? user.getFirstName()
-                : user.getUsername();
+        final String recipientName =
+                (user.getFirstName() != null && !user.getFirstName().isBlank())
+                        ? user.getFirstName()
+                        : user.getUsername();
         final String body = String.format(bodyTemplate, recipientName, resetLink);
 
         Email from = new Email(fromAddress);

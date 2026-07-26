@@ -18,8 +18,10 @@ public class PasswordChangeRequest extends AbstractEntity {
     @ManyToOne(targetEntity = User.class)
     @JoinColumn(referencedColumnName = "id", name = "user_id")
     private User user;
+
     @Column(length = 20)
     private String randomString;
+
     private Boolean expired;
     private Boolean passwordChanged;
     private LocalDateTime emailNotificationSent;

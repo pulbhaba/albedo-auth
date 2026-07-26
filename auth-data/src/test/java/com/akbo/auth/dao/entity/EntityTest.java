@@ -1,11 +1,13 @@
 package com.akbo.auth.dao.entity;
 
+import static org.junit.jupiter.api.Assertions.*;
 import com.akbo.auth.dto.Role;
+
 import org.junit.jupiter.api.Test;
+
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
-import static org.junit.jupiter.api.Assertions.*;
 
 class EntityTest {
 
@@ -19,7 +21,7 @@ class EntityTest {
         user.setAccountNonLocked(true);
         user.setCredentialsNonExpired(true);
         user.setEnabled(true);
-        
+
         Set<UserRole> roles = new HashSet<>();
         roles.add(new UserRole(Role.ROLE_USER));
         user.setAuthorities(roles);
@@ -32,7 +34,7 @@ class EntityTest {
         assertTrue(user.isCredentialsNonExpired());
         assertTrue(user.isEnabled());
         assertEquals(1, user.getAuthorities().size());
-        
+
         User user2 = new User();
         user2.setId(1L);
         // Lombok Data/EqualsAndHashCode should consider ID

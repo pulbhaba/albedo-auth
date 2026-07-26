@@ -18,7 +18,10 @@ public class SmsPasswordResetNotificationService implements PasswordResetNotific
             return;
         }
 
-        log.info("Password reset SMS would be sent to {} with token {}", user.getUsername(), encryptedKey);
+        log.info(
+                "Password reset SMS would be sent to {} with token {}",
+                user.getUsername(),
+                encryptedKey);
         // This class will be replaced/moved or used for a different SMS provider if needed.
     }
 

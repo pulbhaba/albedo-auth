@@ -1,5 +1,6 @@
 package com.akbo.auth.api.service.notification.impl;
 
+import static java.util.Objects.isNull;
 import com.akbo.auth.api.service.notification.PasswordResetNotificationService;
 import com.akbo.auth.dao.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -12,8 +13,6 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ses.SesClient;
 import software.amazon.awssdk.services.ses.model.*;
-
-import static java.util.Objects.isNull;
 
 @Slf4j
 @Service
@@ -50,24 +49,39 @@ public class SesPasswordResetNotificationService implements PasswordResetNotific
         }
 
         final String resetLink = frontendUrl + "/password-reset/" + encryptedKey;
-        final String recipientName = (user.getFirstName() != null && !user.getFirstName().isBlank())
-                ? user.getFirstName()
-                : user.getUsername();
+        final String recipientName =
+                (user.getFirstName() != null && !user.getFirstName().isBlank())
+                        ? user.getFirstName()
+                        : user.getUsername();
         final String body = String.format(bodyTemplate, recipientName, resetLink);
 
-        try (SesClient client = SesClient.builder()
-                .region(Region.of(awsRegion))
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey)))
-                .build()) {
+        try (SesClient client =
+                SesClient.builder()
+                        .region(Region.of(awsRegion))
+                        .credentialsProvider(
+                                StaticCredentialsProvider.create(
+                                        AwsBasicCredentials.create(accessKey, secretKey)))
+                        .build()) {
 
-            SendEmailRequest request = SendEmailRequest.builder()
-                    .destination(Destination.builder().toAddresses(user.getEmailAddress()).build())
-                    .message(Message.builder()
-                            .subject(Content.builder().data(subject).build())
-                            .body(Body.builder().text(Content.builder().data(body).build()).build())
-                            .build())
-                    .source(fromAddress)
-                    .build();
+            SendEmailRequest request =
+                    SendEmailRequest.builder()
+                            .destination(
+                                    Destination.builder()
+                                            .toAddresses(user.getEmailAddress())
+                                            .build())
+                            .message(
+                                    Message.builder()
+                                            .subject(Content.builder().data(subject).build())
+                                            .body(
+                                                    Body.builder()
+                                                            .text(
+                                                                    Content.builder()
+                                                                            .data(body)
+                                                                            .build())
+                                                            .build())
+                                            .build())
+                            .source(fromAddress)
+                            .build();
 
             client.sendEmail(request);
             log.info("Password reset email sent via AWS SES to {}", user.getEmailAddress());

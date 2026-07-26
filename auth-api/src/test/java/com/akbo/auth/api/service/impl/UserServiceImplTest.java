@@ -1,5 +1,8 @@
 package com.akbo.auth.api.service.impl;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 import com.akbo.auth.dao.entity.User;
 import com.akbo.auth.dao.repository.UserRepository;
 import com.akbo.auth.dto.Role;
@@ -15,28 +18,19 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
 
-    @Mock
-    private UserRepository userRepository;
+    @Mock private UserRepository userRepository;
 
-    @Mock
-    private PasswordEncoder passwordEncoder;
+    @Mock private PasswordEncoder passwordEncoder;
 
-    @Mock
-    private ModelMapper modelMapper;
+    @Mock private ModelMapper modelMapper;
 
-    @InjectMocks
-    private UserServiceImpl userService;
+    @InjectMocks private UserServiceImpl userService;
 
     private User user;
     private UserDto userDto;
@@ -131,7 +125,8 @@ class UserServiceImplTest {
     @Test
     void loadUserByUsername_notFound() {
         when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
-        assertThrows(UsernameNotFoundException.class, () -> userService.loadUserByUsername("unknown"));
+        assertThrows(
+                UsernameNotFoundException.class, () -> userService.loadUserByUsername("unknown"));
     }
 
     @Test

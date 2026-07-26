@@ -1,5 +1,6 @@
 package com.akbo.auth.api.service.notification.impl;
 
+import static java.util.Objects.isNull;
 import com.akbo.auth.api.service.notification.PasswordResetNotificationService;
 import com.akbo.auth.dao.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -9,8 +10,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-
-import static java.util.Objects.isNull;
 
 @Slf4j
 @Service
@@ -35,18 +34,22 @@ public class EmailPasswordResetNotificationService implements PasswordResetNotif
     @Override
     public void notify(final User user, final String encryptedKey) {
         if (isNull(user)) {
-            log.info("Skipping password reset email because the requested username does not exist.");
+            log.info(
+                    "Skipping password reset email because the requested username does not exist.");
             return;
         }
         if (isNull(user.getEmailAddress()) || user.getEmailAddress().isBlank()) {
-            log.info("Skipping password reset email because user {} does not have a registered email address.",
+            log.info(
+                    "Skipping password reset email because user {} does not have a registered email"
+                            + " address.",
                     user.getUsername());
             return;
         }
         final String resetLink = frontendUrl + "/password-reset/" + encryptedKey;
-        final String recipientName = (user.getFirstName() != null && !user.getFirstName().isBlank())
-                ? user.getFirstName()
-                : user.getUsername();
+        final String recipientName =
+                (user.getFirstName() != null && !user.getFirstName().isBlank())
+                        ? user.getFirstName()
+                        : user.getUsername();
         final String body = String.format(bodyTemplate, recipientName, resetLink);
 
         final SimpleMailMessage message = new SimpleMailMessage();
