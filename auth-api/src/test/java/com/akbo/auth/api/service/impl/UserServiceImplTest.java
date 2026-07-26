@@ -51,14 +51,13 @@ class UserServiceImplTest {
     @Test
     void createUser_newUserInfo() {
         when(userRepository.findByUsername(userDto.getUsername())).thenReturn(Optional.empty());
-        when(modelMapper.map(userDto, User.class)).thenReturn(new User());
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(userRepository.save(any(User.class))).thenReturn(user);
-        when(modelMapper.map(user, UserDto.class)).thenReturn(userDto);
 
         UserDto created = userService.createUser(userDto);
 
         assertNotNull(created);
+        assertEquals(userDto.getUsername(), created.getUsername());
         verify(userRepository).save(any(User.class));
     }
 
@@ -66,11 +65,11 @@ class UserServiceImplTest {
     void createUser_existingUser_byId() {
         userDto.setId(1L);
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(modelMapper.map(user, UserDto.class)).thenReturn(userDto);
 
         UserDto result = userService.createUser(userDto);
 
-        assertEquals(userDto, result);
+        assertNotNull(result);
+        assertEquals(user.getUsername(), result.getUsername());
         verify(userRepository, never()).save(any());
     }
 
@@ -79,9 +78,7 @@ class UserServiceImplTest {
         UserDetails userDetails = mock(UserDetails.class);
         when(modelMapper.map(userDetails, UserDto.class)).thenReturn(userDto);
         when(userRepository.findByUsername(userDto.getUsername())).thenReturn(Optional.empty());
-        when(modelMapper.map(userDto, User.class)).thenReturn(new User());
         when(userRepository.save(any(User.class))).thenReturn(user);
-        when(modelMapper.map(user, UserDto.class)).thenReturn(userDto);
 
         userService.createUser(userDetails);
 
@@ -105,8 +102,7 @@ class UserServiceImplTest {
     @Test
     void deleteUser_notExists() {
         when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
-        // Note: The implementation has a bug: () -> new BadRequestException(...) does nothing
-        userService.deleteUser("unknown");
+        assertThrows(UsernameNotFoundException.class, () -> userService.deleteUser("unknown"));
         verify(userRepository, never()).deleteById(any());
     }
 
@@ -132,7 +128,8 @@ class UserServiceImplTest {
     @Test
     void getUser() {
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
-        when(modelMapper.map(user, UserDto.class)).thenReturn(userDto);
-        assertEquals(userDto, userService.getUser("testuser"));
+        UserDto result = userService.getUser("testuser");
+        assertNotNull(result);
+        assertEquals(userDto.getUsername(), result.getUsername());
     }
 }

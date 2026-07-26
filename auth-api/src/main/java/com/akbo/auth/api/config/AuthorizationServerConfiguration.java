@@ -100,9 +100,11 @@ public class AuthorizationServerConfiguration {
                         .clientId(clientId)
                         .clientSecret(passwordEncoder.encode(clientSecret))
                         .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                        .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
                         .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
                         .authorizationGrantType(AuthorizationGrantType.PASSWORD)
                         .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                        .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                         .tokenSettings(tokenSettings)
                         .clientSettings(clientSettings)
                         .redirectUri(redirectUri);
@@ -143,6 +145,12 @@ public class AuthorizationServerConfiguration {
     public org.springframework.security.oauth2.jwt.JwtEncoder jwtEncoder(
             JWKSource<SecurityContext> jwkSource) {
         return new org.springframework.security.oauth2.jwt.NimbusJwtEncoder(jwkSource);
+    }
+
+    @Bean
+    public org.springframework.security.oauth2.jwt.JwtDecoder jwtDecoder(
+            JWKSource<SecurityContext> jwkSource) {
+        return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
     }
 
     @Bean

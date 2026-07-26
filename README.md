@@ -252,6 +252,11 @@ See the `docs/` directory for detailed guides:
 - `08_Implementation_Details_v1.md`
 - `09_Testing_v1.md`
 - `10_Deployment_v1.md`
+- `11_Social_Login_v1.md`
+
+## Remaining Tasks
+
+See `REMAINING_TASKS.md` for a list of pending tasks and future improvements.
 
 ## License
 

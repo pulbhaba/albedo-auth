@@ -41,7 +41,8 @@ public class BasicAuthWebSecurityConfiguration {
                                         .authenticated())
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(withDefaults())
-                .httpBasic(withDefaults());
+                .httpBasic(withDefaults())
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()));
 
         if (socialLoginProperties.isEnabled()) {
             try {

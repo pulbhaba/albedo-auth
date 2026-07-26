@@ -6,7 +6,9 @@ import com.akbo.auth.dao.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.AllNestedConditions;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -14,8 +16,23 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "notification.email", name = "provider", havingValue = "smtp")
+@Conditional(EmailPasswordResetNotificationService.EmailSmtpCondition.class)
 public class EmailPasswordResetNotificationService implements PasswordResetNotificationService {
+
+    static class EmailSmtpCondition extends AllNestedConditions {
+        EmailSmtpCondition() {
+            super(ConfigurationPhase.REGISTER_BEAN);
+        }
+
+        @ConditionalOnProperty(name = "notification.active-provider", havingValue = "email")
+        static class ActiveProviderEmail {}
+
+        @ConditionalOnProperty(
+                prefix = "notification.email",
+                name = "provider",
+                havingValue = "smtp")
+        static class EmailProviderSmtp {}
+    }
 
     private final JavaMailSender mailSender;
 

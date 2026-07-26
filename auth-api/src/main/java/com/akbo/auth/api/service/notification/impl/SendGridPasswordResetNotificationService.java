@@ -13,7 +13,9 @@ import com.sendgrid.helpers.mail.objects.Email;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.AllNestedConditions;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -21,8 +23,23 @@ import java.io.IOException;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "notification.email", name = "provider", havingValue = "sendgrid")
+@Conditional(SendGridPasswordResetNotificationService.SendGridCondition.class)
 public class SendGridPasswordResetNotificationService implements PasswordResetNotificationService {
+
+    static class SendGridCondition extends AllNestedConditions {
+        SendGridCondition() {
+            super(ConfigurationPhase.REGISTER_BEAN);
+        }
+
+        @ConditionalOnProperty(name = "notification.active-provider", havingValue = "email")
+        static class ActiveProviderEmail {}
+
+        @ConditionalOnProperty(
+                prefix = "notification.email",
+                name = "provider",
+                havingValue = "sendgrid")
+        static class EmailProviderSendGrid {}
+    }
 
     @Value("${notification.email.sendgrid.api-key}")
     private String apiKey;

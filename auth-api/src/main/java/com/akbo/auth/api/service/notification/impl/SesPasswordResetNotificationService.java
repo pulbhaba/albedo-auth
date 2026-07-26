@@ -6,7 +6,9 @@ import com.akbo.auth.dao.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.AllNestedConditions;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -17,8 +19,23 @@ import software.amazon.awssdk.services.ses.model.*;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "notification.email", name = "provider", havingValue = "ses")
+@Conditional(SesPasswordResetNotificationService.SesCondition.class)
 public class SesPasswordResetNotificationService implements PasswordResetNotificationService {
+
+    static class SesCondition extends AllNestedConditions {
+        SesCondition() {
+            super(ConfigurationPhase.REGISTER_BEAN);
+        }
+
+        @ConditionalOnProperty(name = "notification.active-provider", havingValue = "email")
+        static class ActiveProviderEmail {}
+
+        @ConditionalOnProperty(
+                prefix = "notification.email",
+                name = "provider",
+                havingValue = "ses")
+        static class EmailProviderSes {}
+    }
 
     @Value("${notification.aws.region}")
     private String awsRegion;

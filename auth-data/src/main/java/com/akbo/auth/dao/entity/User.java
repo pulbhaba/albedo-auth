@@ -26,7 +26,7 @@ public class User extends AbstractEntity implements UserDetails, OAuth2User {
     @Getter private String lastName;
     @Getter private String emailAddress;
     @Getter private String phoneNumber;
-    private Boolean enabled;
+    private Boolean enabled = true;
     private Boolean accountNonExpired = true;
     private Boolean credentialsNonExpired = true;
     private Boolean accountNonLocked = true;
