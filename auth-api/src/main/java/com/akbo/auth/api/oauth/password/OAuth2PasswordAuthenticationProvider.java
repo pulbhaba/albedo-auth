@@ -1,17 +1,20 @@
 package com.akbo.auth.api.oauth.password;
 
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.*;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
-import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AccessTokenAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
+import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 
 import java.time.Instant;
 import java.util.*;
@@ -20,18 +23,24 @@ import java.util.stream.Collectors;
 /**
  * AuthenticationProvider for Resource Owner Password Credentials grant (password).
  */
-public class OAuth2PasswordAuthenticationProvider implements org.springframework.security.authentication.AuthenticationProvider {
+public class OAuth2PasswordAuthenticationProvider implements AuthenticationProvider {
 
     private final AuthenticationManager authenticationManager;
     private final OAuth2AuthorizationService authorizationService;
     private final RegisteredClientRepository registeredClientRepository;
+    private final JwtEncoder jwtEncoder;
+    private final AuthorizationServerSettings authorizationServerSettings;
 
     public OAuth2PasswordAuthenticationProvider(AuthenticationManager authenticationManager,
                                                 OAuth2AuthorizationService authorizationService,
-                                                RegisteredClientRepository registeredClientRepository) {
+                                                RegisteredClientRepository registeredClientRepository,
+                                                JwtEncoder jwtEncoder,
+                                                AuthorizationServerSettings authorizationServerSettings) {
         this.authenticationManager = authenticationManager;
         this.authorizationService = authorizationService;
         this.registeredClientRepository = registeredClientRepository;
+        this.jwtEncoder = jwtEncoder;
+        this.authorizationServerSettings = authorizationServerSettings;
     }
 
     @Override
@@ -62,14 +71,31 @@ public class OAuth2PasswordAuthenticationProvider implements org.springframework
         // Determine scopes
         Set<String> authorizedScopes = resolveScopes(registeredClient, requestedScope);
 
-        // Generate simple access token (opaque token for now)
+        // Generate JWT access token
         Instant issuedAt = Instant.now();
         Instant expiresAt = issuedAt.plus(registeredClient.getTokenSettings().getAccessTokenTimeToLive());
 
-        String tokenValue = UUID.randomUUID().toString();
+        String scopeValue = String.join(" ", authorizedScopes);
+        AuthorizationServerSettings as = this.authorizationServerSettings;
+        String issuer = as != null ? as.getIssuer() : null;
+
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer(issuer)
+                .subject(userAuth.getName())
+                .audience(Collections.singletonList(registeredClient.getClientId()))
+                .issuedAt(issuedAt)
+                .expiresAt(expiresAt)
+                .claim(OAuth2ParameterNames.SCOPE, scopeValue)
+                .claim("client_id", registeredClient.getClientId())
+                .id(UUID.randomUUID().toString())
+                .build();
+
+        JwsHeader jwsHeader = JwsHeader.with(SignatureAlgorithm.RS256).build();
+        Jwt jwt = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims));
+
         OAuth2AccessToken accessToken = new OAuth2AccessToken(
                 OAuth2AccessToken.TokenType.BEARER,
-                tokenValue,
+                jwt.getTokenValue(),
                 issuedAt,
                 expiresAt,
                 authorizedScopes);
@@ -105,11 +131,11 @@ public class OAuth2PasswordAuthenticationProvider implements org.springframework
     }
 
     @Override
-    public boolean supports(Class<?> authentication) {
+    public boolean supports(final Class<?> authentication) {
         return OAuth2PasswordAuthenticationToken.class.isAssignableFrom(authentication);
     }
 
-    private Authentication getAuthenticatedClient(OAuth2PasswordAuthenticationToken authentication) {
+    private Authentication getAuthenticatedClient(final OAuth2PasswordAuthenticationToken authentication) {
         Authentication clientPrincipal = authentication.getPrincipal();
         if (!(clientPrincipal instanceof OAuth2ClientAuthenticationToken clientAuth)) {
             throw new OAuth2AuthenticationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_CLIENT));
@@ -120,7 +146,7 @@ public class OAuth2PasswordAuthenticationProvider implements org.springframework
         return clientAuth;
     }
 
-    private RegisteredClient getRegisteredClient(Authentication clientPrincipal) {
+    private RegisteredClient getRegisteredClient(final Authentication clientPrincipal) {
         assert ((OAuth2ClientAuthenticationToken) clientPrincipal).getRegisteredClient() != null;
         String clientId = ((OAuth2ClientAuthenticationToken) clientPrincipal).getRegisteredClient().getClientId();
         RegisteredClient registeredClient = registeredClientRepository.findByClientId(clientId);
@@ -130,7 +156,7 @@ public class OAuth2PasswordAuthenticationProvider implements org.springframework
         return registeredClient;
     }
 
-    private Set<String> resolveScopes(RegisteredClient registeredClient, String requestedScope) {
+    private Set<String> resolveScopes(final RegisteredClient registeredClient, final String requestedScope) {
         if (requestedScope == null || requestedScope.isBlank()) {
             return registeredClient.getScopes();
         }
