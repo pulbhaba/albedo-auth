@@ -9,8 +9,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Converts an OAuth2 Token Endpoint request with grant_type=password into
- * {@link OAuth2PasswordAuthenticationToken} for further authentication.
+ * Converts an OAuth2 Token Endpoint request with grant_type=password into {@link
+ * OAuth2PasswordAuthenticationToken} for further authentication.
  */
 public class PasswordAuthenticationConverter implements AuthenticationConverter {
 

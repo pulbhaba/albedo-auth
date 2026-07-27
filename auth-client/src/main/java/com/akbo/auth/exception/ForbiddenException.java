@@ -8,5 +8,4 @@ public class ForbiddenException extends HttpStatusCodeException {
     public ForbiddenException(final String message) {
         super(HttpStatus.FORBIDDEN, message);
     }
-
 }

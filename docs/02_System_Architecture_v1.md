@@ -2,30 +2,63 @@
 
 ## High-Level Architecture Diagram
 
-*Include a diagram showing the interaction between the auth-service and other services.*
+```mermaid
+graph TD
+    Client[Client Application] -->|HTTP/REST| AuthAPI[auth-api]
+    AuthAPI -->|JPA| AuthData[auth-data]
+    AuthData -->|SQL| DB[(MySQL Database)]
+    AuthAPI -.->|SMTP/SMS| Notifications[Notification Services]
+    AuthAPI -.->|OAuth2/OIDC| Social[Social Providers: Google, GitHub, etc.]
+    AuthAPI --- AuthClient[auth-client: DTOs & Utils]
+```
 
 ## Technology Stack
 
-The Albedo Auth service will utilize the following technologies:
+The Albedo Auth service utilizes the following technologies:
 
-- **Spring Boot**: Backend framework.
-- **JWT**: Authentication.
-- **Gradle Groovy**: Project management.
+- **Java 21**: Core programming language.
+- **Spring Boot 3.3.x**: Primary framework.
+- **Spring Security & Spring Authorization Server**: For authentication and OAuth2/OIDC.
+- **MySQL 8.x**: Relational database for persistence.
+- **Hibernate / JPA**: Object-Relational Mapping.
+- **Gradle**: Build and dependency management.
+- **Lombok**: To reduce boilerplate code.
+- **ModelMapper**: For DTO-to-Entity mapping.
 
 ## Project Structure
 
-The Albedo Auth service is divided into three separate sub-projects using Gradle Groovy:
+The Albedo Auth service is organized as a multi-module Gradle project:
 
-1. **auth-client**
-    - Contains models and client implementations.
-    - Future plans include implementing clients in multiple languages.
+1. **`auth-client`**
+    - Shared module containing DTOs (`UserDto`, `PasswordChangeDto`), custom exceptions, and common utilities (`PasswordTools`).
+    - Intended to be used as a dependency by other services that need to interact with Albedo Auth.
 
-2. **auth-data**
-    - Contains entities and repositories.
+2. **`auth-data`**
+    - Data access layer containing JPA entities (`User`, `UserRole`, `PasswordChangeRequest`) and Spring Data repositories.
+    - Handles persistence logic and database schema management.
 
-3. **auth-api**
-    - Contains the service backend implementation.
-    - Manages the core authentication and authorization logic.
+3. **`auth-api`**
+    - Core service implementation exposing REST endpoints.
+    - Configures Spring Security and the OAuth2 Authorization Server.
+    - Implements business logic for user registration, password management, and notifications.
+
+## Key Service Flows
+
+### 1. User Authentication (Resource Owner Password Credentials)
+- Client sends user credentials to `/oauth2/token`.
+- `auth-api` validates credentials against `auth-data`.
+- On success, `auth-api` generates and signs a JWT access token.
+
+### 2. User Registration
+- Client sends registration details to `/public/user/register`.
+- `auth-api` hashes the password and saves a new `User` entity via `auth-data`.
+- Default roles are assigned to the new user.
+
+### 3. Password Reset
+- User requests a reset via `/public/user/{username}/reset-password`.
+- `auth-api` generates a secure token and saves a `PasswordChangeRequest`.
+- A notification is sent via the active provider (e.g., Email, SMS, or Log).
+- User completes the reset by providing a new password and the token to `/public/change-password/`.
 
 ## Controllers & Endpoints
 

@@ -20,8 +20,7 @@ public abstract class AbstractEntity {
             name = "sequence-generator",
             sequenceName = "user_sequence",
             initialValue = 100000,
-            allocationSize = 1
-    )
+            allocationSize = 1)
     private Long id;
 
     @CreationTimestamp
@@ -32,9 +31,7 @@ public abstract class AbstractEntity {
     @Column(columnDefinition = "datetime")
     private LocalDateTime lastUpdatedTime;
 
-    @CreatedBy
-    private String createdBy;
+    @CreatedBy private String createdBy;
 
-    @LastModifiedBy
-    private String lastUpdatedBy;
+    @LastModifiedBy private String lastUpdatedBy;
 }

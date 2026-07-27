@@ -8,9 +8,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.envers.Audited;
 import org.springframework.security.core.GrantedAuthority;
 
-/**
- *
- */
+/** */
 @Data
 @Table(name = "roles")
 @Entity
@@ -28,5 +26,3 @@ public class UserRole implements GrantedAuthority {
         return role.getRoleName();
     }
 }
-
-

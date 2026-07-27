@@ -12,6 +12,14 @@ public class LoggingPasswordResetNotificationService implements PasswordResetNot
     @Override
     public void notify(final User user, final String encryptedKey) {
         final String username = user != null ? user.getUsername() : "<unknown>";
-        log.info("Password reset token for user {} would be delivered via email/SMS: {}", username, encryptedKey);
+        log.info(
+                "Password reset token for user {} would be delivered via email/SMS: {}",
+                username,
+                encryptedKey);
+    }
+
+    @Override
+    public NotificationType getType() {
+        return null; // Used as a fallback for both
     }
 }

@@ -6,7 +6,6 @@ import com.akbo.auth.dao.entity.UserRole;
 import com.akbo.auth.dao.repository.UserRepository;
 import com.akbo.auth.dto.UserDto;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.BadRequestException;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -30,19 +29,23 @@ public class UserServiceImpl implements UserService {
         // early exit
         if (Objects.nonNull(user.getId()))
             existingUser = userRepository.findById(user.getId()).orElse(null);
-        else
-            existingUser = userRepository.findByUsername(user.getUsername()).orElse(null);
+        else existingUser = userRepository.findByUsername(user.getUsername()).orElse(null);
 
-        if (Objects.nonNull(existingUser))
-            return modelMapper.map(existingUser, UserDto.class);
+        if (Objects.nonNull(existingUser)) return mapToDto(existingUser);
 
-        final User newUser = modelMapper.map(user, User.class);
+        final User newUser = new User();
+        newUser.setUsername(user.getUsername());
+        newUser.setFirstName(user.getFirstName());
+        newUser.setLastName(user.getLastName());
+        newUser.setEmailAddress(user.getEmailAddress());
+        newUser.setEnabled(true);
         newUser.setAuthorities(new HashSet<>());
-        user.getRoles().forEach(role -> newUser.getAuthorities().add(new UserRole(role)));
+        if (user.getRoles() != null) {
+            user.getRoles().forEach(role -> newUser.getAuthorities().add(new UserRole(role)));
+        }
         newUser.setPassword(passwordEncoder.encode(user.getPassword()));
         final User savedUser = userRepository.save(newUser);
-
-        return modelMapper.map(savedUser, UserDto.class);
+        return mapToDto(savedUser);
     }
 
     @Override
@@ -57,30 +60,52 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(final String username) {
-        userRepository.findByUsername(username)
-                .ifPresentOrElse(user -> userRepository.deleteById(user.getId()),
-                        () -> new BadRequestException("The user does not exist in the system"));
+        userRepository
+                .findByUsername(username)
+                .ifPresentOrElse(
+                        user -> userRepository.deleteById(user.getId()),
+                        () -> {
+                            throw new UsernameNotFoundException(
+                                    "The user does not exist in the system");
+                        });
     }
 
     @Override
-    public void changePassword(final String oldPassword, final String newPassword) {
-    }
+    public void changePassword(final String oldPassword, final String newPassword) {}
 
     @Override
     public boolean userExists(final String username) {
-        return userRepository.findByUsername(username)
-                .isPresent();
+        return userRepository.findByUsername(username).isPresent();
     }
 
     @Override
     public UserDetails loadUserByUsername(final String username) throws UsernameNotFoundException {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("The username was not found in the system"));
+        return userRepository
+                .findByUsername(username)
+                .orElseThrow(
+                        () ->
+                                new UsernameNotFoundException(
+                                        "The username was not found in the system"));
     }
 
     @Override
     public UserDto getUser(final String username) {
-        final var user = modelMapper.map((User) loadUserByUsername(username), UserDto.class);
-        return user;
+        final User user = (User) loadUserByUsername(username);
+        return mapToDto(user);
+    }
+
+    private UserDto mapToDto(User user) {
+        final UserDto userDto = new UserDto();
+        userDto.setId(user.getId());
+        userDto.setUsername(user.getUsername());
+        userDto.setFirstName(user.getFirstName());
+        userDto.setLastName(user.getLastName());
+        userDto.setEmailAddress(user.getEmailAddress());
+        userDto.setEnabled(user.isEnabled());
+        userDto.setRoles(new HashSet<>());
+        if (user.getAuthorities() != null) {
+            user.getAuthorities().forEach(authority -> userDto.getRoles().add(authority.getRole()));
+        }
+        return userDto;
     }
 }

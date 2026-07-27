@@ -3,13 +3,30 @@ package com.akbo.auth.api.service.notification.impl;
 import com.akbo.auth.api.service.notification.PasswordResetNotificationService;
 import com.akbo.auth.dao.entity.User;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.AllNestedConditions;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-@ConditionalOnProperty(prefix = "notification", name = "sms.enabled", havingValue = "true")
+@Conditional(SmsPasswordResetNotificationService.SmsSnsCondition.class)
 public class SmsPasswordResetNotificationService implements PasswordResetNotificationService {
+
+    static class SmsSnsCondition extends AllNestedConditions {
+        SmsSnsCondition() {
+            super(ConfigurationPhase.REGISTER_BEAN);
+        }
+
+        @ConditionalOnProperty(name = "notification.active-provider", havingValue = "sms")
+        static class ActiveProviderSms {}
+
+        @ConditionalOnProperty(
+                prefix = "notification.sms.sns",
+                name = "enabled",
+                havingValue = "true")
+        static class SmsSnsEnabled {}
+    }
 
     @Override
     public void notify(final User user, final String encryptedKey) {
@@ -18,7 +35,15 @@ public class SmsPasswordResetNotificationService implements PasswordResetNotific
             return;
         }
 
-        log.info("Password reset SMS would be sent to {} with token {}", user.getUsername(), encryptedKey);
-        // TODO: Integrate with an SMS provider (e.g., Twilio) when available.
+        log.info(
+                "Password reset SMS would be sent to {} with token {}",
+                user.getUsername(),
+                encryptedKey);
+        // This class will be replaced/moved or used for a different SMS provider if needed.
+    }
+
+    @Override
+    public NotificationType getType() {
+        return NotificationType.SMS;
     }
 }

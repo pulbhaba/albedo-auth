@@ -1,53 +1,72 @@
 package com.akbo.auth.api.service.notification.impl;
 
+import static java.util.Objects.isNull;
 import com.akbo.auth.api.service.notification.PasswordResetNotificationService;
 import com.akbo.auth.dao.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.AllNestedConditions;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
-import static java.util.Objects.isNull;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "notification", name = "email.enabled", havingValue = "true")
+@Conditional(EmailPasswordResetNotificationService.EmailSmtpCondition.class)
 public class EmailPasswordResetNotificationService implements PasswordResetNotificationService {
+
+    static class EmailSmtpCondition extends AllNestedConditions {
+        EmailSmtpCondition() {
+            super(ConfigurationPhase.REGISTER_BEAN);
+        }
+
+        @ConditionalOnProperty(name = "notification.active-provider", havingValue = "email")
+        static class ActiveProviderEmail {}
+
+        @ConditionalOnProperty(
+                prefix = "notification.email",
+                name = "provider",
+                havingValue = "smtp")
+        static class EmailProviderSmtp {}
+    }
 
     private final JavaMailSender mailSender;
 
     @Value("${notification.email.from-address}")
     private String fromAddress;
 
-    @Value("${notification.email.subject:Albedo Auth Password Reset}")
+    @Value("${notification.email.subject}")
     private String subject;
 
-    @Value("${notification.email.reset-url:https://example.com/reset?token=}")
-    private String resetUrl;
+    @Value("${notification.frontend-url}")
+    private String frontendUrl;
 
-    @Value("${notification.email.body-template:Hello %s,%n%nYou requested to reset your password. "
-            + "Use the following link to proceed:%n%s%n%nIf you did not request this change, please ignore this email.%n}")
+    @Value("${notification.email.body-template}")
     private String bodyTemplate;
 
     @Override
     public void notify(final User user, final String encryptedKey) {
         if (isNull(user)) {
-            log.info("Skipping password reset email because the requested username does not exist.");
+            log.info(
+                    "Skipping password reset email because the requested username does not exist.");
             return;
         }
         if (isNull(user.getEmailAddress()) || user.getEmailAddress().isBlank()) {
-            log.info("Skipping password reset email because user {} does not have a registered email address.",
+            log.info(
+                    "Skipping password reset email because user {} does not have a registered email"
+                            + " address.",
                     user.getUsername());
             return;
         }
-        final String resetLink = resetUrl + encryptedKey;
-        final String recipientName = (user.getFirstName() != null && !user.getFirstName().isBlank())
-                ? user.getFirstName()
-                : user.getUsername();
+        final String resetLink = frontendUrl + "/password-reset/" + encryptedKey;
+        final String recipientName =
+                (user.getFirstName() != null && !user.getFirstName().isBlank())
+                        ? user.getFirstName()
+                        : user.getUsername();
         final String body = String.format(bodyTemplate, recipientName, resetLink);
 
         final SimpleMailMessage message = new SimpleMailMessage();
@@ -57,6 +76,11 @@ public class EmailPasswordResetNotificationService implements PasswordResetNotif
         message.setText(body);
         mailSender.send(message);
 
-        log.info("Password reset email queued for {}", user.getEmailAddress());
+        log.info("Password reset email queued for {} via SMTP", user.getEmailAddress());
+    }
+
+    @Override
+    public NotificationType getType() {
+        return NotificationType.EMAIL;
     }
 }

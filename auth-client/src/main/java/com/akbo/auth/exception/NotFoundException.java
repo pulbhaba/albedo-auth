@@ -8,5 +8,4 @@ public class NotFoundException extends HttpStatusCodeException {
     public NotFoundException(final String message) {
         super(HttpStatus.NOT_FOUND, message);
     }
-
 }

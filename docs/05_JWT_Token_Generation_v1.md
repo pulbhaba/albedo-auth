@@ -83,6 +83,20 @@ app.auth.client-redirect-uri=http://127.0.0.1:8080/login/oauth2/code/albedo-clie
 - Secrets are stored hashed with the configured `PasswordEncoder`.
 - Additional clients can be added by expanding the registration logic.
 
+## Resource Server Validation
+
+Protected resources in the Albedo Auth API (e.g., endpoints under `/user/**`) act as a Resource Server. They validate the JWT access token provided in the `Authorization` header.
+
+- **Header:** `Authorization: Bearer <access_token>`
+- **Validation:** The server uses its configured `JWKSource` to verify the JWT's signature and expiration.
+
+## JWKS Endpoint
+
+The server exposes its public keys at the JWKS (JSON Web Key Set) endpoint, allowing external resource servers to validate tokens issued by Albedo Auth.
+
+- **URL:** `GET /oauth2/jwks`
+- **Response:** Standard JWK Set containing the public keys used for signing.
+
 ## Usage Notes
 
 - Protect client credentials; use app passwords or secrets management in production.

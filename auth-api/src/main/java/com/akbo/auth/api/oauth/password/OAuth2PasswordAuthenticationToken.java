@@ -7,15 +7,13 @@ import org.springframework.security.oauth2.server.authorization.authentication.O
 
 import java.util.Map;
 
-/**
- * Authentication token representing the Resource Owner Password Credentials grant request.
- */
+/** Authentication token representing the Resource Owner Password Credentials grant request. */
 public class OAuth2PasswordAuthenticationToken extends OAuth2AuthorizationGrantAuthenticationToken {
 
     private final Authentication clientPrincipal;
 
-    public OAuth2PasswordAuthenticationToken(Authentication clientPrincipal,
-                                             Map<String, Object> additionalParameters) {
+    public OAuth2PasswordAuthenticationToken(
+            Authentication clientPrincipal, Map<String, Object> additionalParameters) {
         super(new AuthorizationGrantType("password"), clientPrincipal, additionalParameters);
         this.clientPrincipal = clientPrincipal;
     }

@@ -20,9 +20,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * AuthenticationProvider for Resource Owner Password Credentials grant (password).
- */
+/** AuthenticationProvider for Resource Owner Password Credentials grant (password). */
 public class OAuth2PasswordAuthenticationProvider implements AuthenticationProvider {
 
     private final AuthenticationManager authenticationManager;
@@ -31,11 +29,12 @@ public class OAuth2PasswordAuthenticationProvider implements AuthenticationProvi
     private final JwtEncoder jwtEncoder;
     private final AuthorizationServerSettings authorizationServerSettings;
 
-    public OAuth2PasswordAuthenticationProvider(AuthenticationManager authenticationManager,
-                                                OAuth2AuthorizationService authorizationService,
-                                                RegisteredClientRepository registeredClientRepository,
-                                                JwtEncoder jwtEncoder,
-                                                AuthorizationServerSettings authorizationServerSettings) {
+    public OAuth2PasswordAuthenticationProvider(
+            AuthenticationManager authenticationManager,
+            OAuth2AuthorizationService authorizationService,
+            RegisteredClientRepository registeredClientRepository,
+            JwtEncoder jwtEncoder,
+            AuthorizationServerSettings authorizationServerSettings) {
         this.authenticationManager = authenticationManager;
         this.authorizationService = authorizationService;
         this.registeredClientRepository = registeredClientRepository;
@@ -44,7 +43,8 @@ public class OAuth2PasswordAuthenticationProvider implements AuthenticationProvi
     }
 
     @Override
-    public Authentication authenticate(Authentication authentication) throws OAuth2AuthenticationException {
+    public Authentication authenticate(Authentication authentication)
+            throws OAuth2AuthenticationException {
         if (!(authentication instanceof OAuth2PasswordAuthenticationToken passwordAuth)) {
             return null;
         }
@@ -52,8 +52,11 @@ public class OAuth2PasswordAuthenticationProvider implements AuthenticationProvi
         // Validate client
         Authentication clientPrincipal = getAuthenticatedClient(passwordAuth);
         RegisteredClient registeredClient = getRegisteredClient(clientPrincipal);
-        if (!registeredClient.getAuthorizationGrantTypes().contains(new AuthorizationGrantType("password"))) {
-            throw new OAuth2AuthenticationException(new OAuth2Error(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT));
+        if (!registeredClient
+                .getAuthorizationGrantTypes()
+                .contains(new AuthorizationGrantType("password"))) {
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT));
         }
 
         Map<String, Object> params = passwordAuth.getAdditionalParameters();
@@ -62,59 +65,74 @@ public class OAuth2PasswordAuthenticationProvider implements AuthenticationProvi
         String requestedScope = (String) params.get(OAuth2ParameterNames.SCOPE);
 
         if (username == null || password == null) {
-            throw new OAuth2AuthenticationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST, "Missing username or password", null));
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error(
+                            OAuth2ErrorCodes.INVALID_REQUEST,
+                            "Missing username or password",
+                            null));
         }
 
         // Authenticate resource owner
-        Authentication userAuth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+        Authentication userAuth =
+                authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(username, password));
 
         // Determine scopes
         Set<String> authorizedScopes = resolveScopes(registeredClient, requestedScope);
 
         // Generate JWT access token
         Instant issuedAt = Instant.now();
-        Instant expiresAt = issuedAt.plus(registeredClient.getTokenSettings().getAccessTokenTimeToLive());
+        Instant expiresAt =
+                issuedAt.plus(registeredClient.getTokenSettings().getAccessTokenTimeToLive());
 
         String scopeValue = String.join(" ", authorizedScopes);
         AuthorizationServerSettings as = this.authorizationServerSettings;
         String issuer = as != null ? as.getIssuer() : null;
 
-        JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer(issuer)
-                .subject(userAuth.getName())
-                .audience(Collections.singletonList(registeredClient.getClientId()))
-                .issuedAt(issuedAt)
-                .expiresAt(expiresAt)
-                .claim(OAuth2ParameterNames.SCOPE, scopeValue)
-                .claim("client_id", registeredClient.getClientId())
-                .id(UUID.randomUUID().toString())
-                .build();
+        JwtClaimsSet claims =
+                JwtClaimsSet.builder()
+                        .issuer(issuer)
+                        .subject(userAuth.getName())
+                        .audience(Collections.singletonList(registeredClient.getClientId()))
+                        .issuedAt(issuedAt)
+                        .expiresAt(expiresAt)
+                        .claim(OAuth2ParameterNames.SCOPE, scopeValue)
+                        .claim("client_id", registeredClient.getClientId())
+                        .id(UUID.randomUUID().toString())
+                        .build();
 
         JwsHeader jwsHeader = JwsHeader.with(SignatureAlgorithm.RS256).build();
         Jwt jwt = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims));
 
-        OAuth2AccessToken accessToken = new OAuth2AccessToken(
-                OAuth2AccessToken.TokenType.BEARER,
-                jwt.getTokenValue(),
-                issuedAt,
-                expiresAt,
-                authorizedScopes);
+        OAuth2AccessToken accessToken =
+                new OAuth2AccessToken(
+                        OAuth2AccessToken.TokenType.BEARER,
+                        jwt.getTokenValue(),
+                        issuedAt,
+                        expiresAt,
+                        authorizedScopes);
 
         // Optionally create refresh token
         OAuth2RefreshToken refreshToken = null;
-        if (registeredClient.getAuthorizationGrantTypes().contains(AuthorizationGrantType.REFRESH_TOKEN)) {
+        if (registeredClient
+                .getAuthorizationGrantTypes()
+                .contains(AuthorizationGrantType.REFRESH_TOKEN)) {
             Instant rtIssuedAt = Instant.now();
-            Instant rtExpiresAt = rtIssuedAt.plus(registeredClient.getTokenSettings().getRefreshTokenTimeToLive());
-            refreshToken = new OAuth2RefreshToken(UUID.randomUUID().toString(), rtIssuedAt, rtExpiresAt);
+            Instant rtExpiresAt =
+                    rtIssuedAt.plus(
+                            registeredClient.getTokenSettings().getRefreshTokenTimeToLive());
+            refreshToken =
+                    new OAuth2RefreshToken(UUID.randomUUID().toString(), rtIssuedAt, rtExpiresAt);
         }
 
         // Build authorization
         @SuppressWarnings("deprecation")
-        OAuth2Authorization.Builder authorizationBuilder = OAuth2Authorization.withRegisteredClient(registeredClient)
-                .principalName(userAuth.getName())
-                .authorizationGrantType(AuthorizationGrantType.PASSWORD)
-                .authorizedScopes(authorizedScopes)
-                .token(accessToken);
+        OAuth2Authorization.Builder authorizationBuilder =
+                OAuth2Authorization.withRegisteredClient(registeredClient)
+                        .principalName(userAuth.getName())
+                        .authorizationGrantType(AuthorizationGrantType.PASSWORD)
+                        .authorizedScopes(authorizedScopes)
+                        .token(accessToken);
         if (refreshToken != null) {
             authorizationBuilder.refreshToken(refreshToken);
         }
@@ -125,9 +143,7 @@ public class OAuth2PasswordAuthenticationProvider implements AuthenticationProvi
         Map<String, Object> additionalParameters = Collections.emptyMap();
 
         return new OAuth2AccessTokenAuthenticationToken(
-                registeredClient, clientPrincipal, accessToken,
-                refreshToken,
-                additionalParameters);
+                registeredClient, clientPrincipal, accessToken, refreshToken, additionalParameters);
     }
 
     @Override
@@ -135,37 +151,47 @@ public class OAuth2PasswordAuthenticationProvider implements AuthenticationProvi
         return OAuth2PasswordAuthenticationToken.class.isAssignableFrom(authentication);
     }
 
-    private Authentication getAuthenticatedClient(final OAuth2PasswordAuthenticationToken authentication) {
+    private Authentication getAuthenticatedClient(
+            final OAuth2PasswordAuthenticationToken authentication) {
         Authentication clientPrincipal = authentication.getPrincipal();
         if (!(clientPrincipal instanceof OAuth2ClientAuthenticationToken clientAuth)) {
-            throw new OAuth2AuthenticationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_CLIENT));
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error(OAuth2ErrorCodes.INVALID_CLIENT));
         }
         if (!clientAuth.isAuthenticated()) {
-            throw new OAuth2AuthenticationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_CLIENT));
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error(OAuth2ErrorCodes.INVALID_CLIENT));
         }
         return clientAuth;
     }
 
     private RegisteredClient getRegisteredClient(final Authentication clientPrincipal) {
         assert ((OAuth2ClientAuthenticationToken) clientPrincipal).getRegisteredClient() != null;
-        String clientId = ((OAuth2ClientAuthenticationToken) clientPrincipal).getRegisteredClient().getClientId();
+        String clientId =
+                ((OAuth2ClientAuthenticationToken) clientPrincipal)
+                        .getRegisteredClient()
+                        .getClientId();
         RegisteredClient registeredClient = registeredClientRepository.findByClientId(clientId);
         if (registeredClient == null) {
-            throw new OAuth2AuthenticationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_CLIENT));
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error(OAuth2ErrorCodes.INVALID_CLIENT));
         }
         return registeredClient;
     }
 
-    private Set<String> resolveScopes(final RegisteredClient registeredClient, final String requestedScope) {
+    private Set<String> resolveScopes(
+            final RegisteredClient registeredClient, final String requestedScope) {
         if (requestedScope == null || requestedScope.isBlank()) {
             return registeredClient.getScopes();
         }
-        Set<String> requested = Arrays.stream(requestedScope.split(" "))
-                .map(String::trim)
-                .filter(s -> !s.isBlank())
-                .collect(Collectors.toSet());
+        Set<String> requested =
+                Arrays.stream(requestedScope.split(" "))
+                        .map(String::trim)
+                        .filter(s -> !s.isBlank())
+                        .collect(Collectors.toSet());
         if (!registeredClient.getScopes().containsAll(requested)) {
-            throw new OAuth2AuthenticationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_SCOPE));
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error(OAuth2ErrorCodes.INVALID_SCOPE));
         }
         return requested;
     }

@@ -1,11 +1,12 @@
 package com.akbo.auth.api.service;
 
 import com.akbo.auth.dto.PasswordChangeDto;
-import com.akbo.auth.dto.UserDto;
+
+import java.util.Map;
 
 public interface PasswordService {
 
-    UserDto changePassword(final PasswordChangeDto request);
+    Map<String, String> changePassword(final PasswordChangeDto request);
 
     void RequestPasswordChange(final String username);
 }

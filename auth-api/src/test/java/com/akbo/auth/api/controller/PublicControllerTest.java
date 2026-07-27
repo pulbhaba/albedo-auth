@@ -1,10 +1,16 @@
 package com.akbo.auth.api.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import com.akbo.auth.api.service.PasswordService;
 import com.akbo.auth.api.service.UserService;
 import com.akbo.auth.aspect.GlobalExceptionHandler;
 import com.akbo.auth.dto.PasswordChangeDto;
-import com.akbo.auth.dto.Role;
 import com.akbo.auth.dto.UserDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,16 +24,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 @ExtendWith(MockitoExtension.class)
 class PublicControllerTest {
 
@@ -35,46 +31,36 @@ class PublicControllerTest {
 
     ObjectMapper objectMapper = new ObjectMapper();
 
-    @Mock
-    PasswordService passwordService;
+    @Mock PasswordService passwordService;
 
-    @Mock
-    UserService userService;
+    @Mock UserService userService;
 
-    @InjectMocks
-    PublicController controller;
+    @InjectMocks PublicController controller;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(controller)
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
+        mockMvc =
+                MockMvcBuilders.standaloneSetup(controller)
+                        .setControllerAdvice(new GlobalExceptionHandler())
+                        .build();
     }
 
     @Test
-    void changePassword_returnsUserDto() throws Exception {
+    void changePassword_returnsSuccessMessage() throws Exception {
         PasswordChangeDto dto = new PasswordChangeDto();
         dto.setRequestKey("req-123");
         dto.setNewPassword("new");
 
-        UserDto resp = new UserDto();
-        resp.setId(1L);
-        resp.setUsername("alice");
-        resp.setFirstName("Alice");
-        resp.setLastName("Liddell");
-        resp.setEmailAddress("alice@example.com");
-        resp.setEnabled(true);
-        resp.setRoles(Set.of(Role.ROLE_USER));
+        when(passwordService.changePassword(any(PasswordChangeDto.class)))
+                .thenReturn(java.util.Map.of("message", "Password successfully changed."));
 
-        when(passwordService.changePassword(any(PasswordChangeDto.class))).thenReturn(resp);
-
-        mockMvc.perform(post("/public/change-password/")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+        mockMvc.perform(
+                        post("/public/change-password/")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.username").value("alice"))
-                .andExpect(jsonPath("$.firstName").value("Alice"));
+                .andExpect(jsonPath("$.message").value("Password successfully changed."));
 
         ArgumentCaptor<PasswordChangeDto> captor = ArgumentCaptor.forClass(PasswordChangeDto.class);
         verify(passwordService).changePassword(captor.capture());
@@ -101,9 +87,10 @@ class PublicControllerTest {
 
         when(userService.createUser(any(UserDto.class))).thenReturn(saved);
 
-        mockMvc.perform(post("/public/user/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
+        mockMvc.perform(
+                        post("/public/user/register")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(42))
                 .andExpect(jsonPath("$.username").value("charlie"));

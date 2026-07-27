@@ -8,5 +8,4 @@ public class UnauthorizedException extends HttpStatusCodeException {
     public UnauthorizedException(final String message) {
         super(HttpStatus.UNAUTHORIZED, message);
     }
-
 }
