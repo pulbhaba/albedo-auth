@@ -3,6 +3,7 @@ package com.akbo.auth.api.config;
 import com.akbo.auth.api.jose.Keys;
 import com.akbo.auth.api.oauth.password.OAuth2PasswordAuthenticationProvider;
 import com.akbo.auth.api.oauth.password.PasswordAuthenticationConverter;
+import com.akbo.auth.api.service.TokenLogoutService;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
@@ -19,6 +20,12 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
+import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
@@ -149,8 +156,17 @@ public class AuthorizationServerConfiguration {
 
     @Bean
     public org.springframework.security.oauth2.jwt.JwtDecoder jwtDecoder(
-            JWKSource<SecurityContext> jwkSource) {
-        return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+            JWKSource<SecurityContext> jwkSource, TokenLogoutService tokenLogoutService) {
+        final org.springframework.security.oauth2.jwt.JwtDecoder jwtDecoder =
+                OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+        if (jwtDecoder
+                instanceof org.springframework.security.oauth2.jwt.NimbusJwtDecoder decoder) {
+            decoder.setJwtValidator(
+                    new DelegatingOAuth2TokenValidator<>(
+                            JwtValidators.createDefault(),
+                            revokedJwtValidator(tokenLogoutService)));
+        }
+        return jwtDecoder;
     }
 
     @Bean
@@ -189,5 +205,18 @@ public class AuthorizationServerConfiguration {
             throw new IllegalArgumentException(
                     "Invalid duration for property '" + propertyName + "': " + value, ex);
         }
+    }
+
+    private static OAuth2TokenValidator<org.springframework.security.oauth2.jwt.Jwt>
+            revokedJwtValidator(final TokenLogoutService tokenLogoutService) {
+        return jwt -> {
+            if (!tokenLogoutService.isAccessTokenRevoked(jwt)) {
+                return OAuth2TokenValidatorResult.success();
+            }
+
+            return OAuth2TokenValidatorResult.failure(
+                    new OAuth2Error(
+                            OAuth2ErrorCodes.INVALID_TOKEN, "Token has been revoked", null));
+        };
     }
 }
