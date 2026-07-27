@@ -9,16 +9,24 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @Configuration
@@ -33,7 +41,9 @@ public class BasicAuthWebSecurityConfiguration {
             throws Exception {
         http.authorizeHttpRequests(
                         requests ->
-                                requests.requestMatchers("/admin/**", "/user/**")
+                                requests.requestMatchers("/admin/**")
+                                        .hasRole("ADMIN")
+                                        .requestMatchers("/user/**")
                                         .authenticated()
                                         .requestMatchers("/public/**", "/login/**", "/oauth2/**")
                                         .permitAll()
@@ -42,7 +52,12 @@ public class BasicAuthWebSecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(withDefaults())
                 .httpBasic(withDefaults())
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()));
+                .oauth2ResourceServer(
+                        oauth2 ->
+                                oauth2.jwt(
+                                        jwt ->
+                                                jwt.jwtAuthenticationConverter(
+                                                        jwtAuthenticationConverter())));
 
         if (socialLoginProperties.isEnabled()) {
             try {
@@ -67,6 +82,27 @@ public class BasicAuthWebSecurityConfiguration {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return createDelegatingPasswordEncoder();
+    }
+
+    @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtGrantedAuthoritiesConverter scopeAuthorities = new JwtGrantedAuthoritiesConverter();
+        Converter<Jwt, Collection<GrantedAuthority>> authoritiesConverter =
+                jwt -> {
+                    Collection<GrantedAuthority> authorities =
+                            new ArrayList<>(scopeAuthorities.convert(jwt));
+                    List<String> roles = jwt.getClaimAsStringList("roles");
+
+                    if (roles != null) {
+                        roles.stream().map(SimpleGrantedAuthority::new).forEach(authorities::add);
+                    }
+
+                    return authorities;
+                };
+
+        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
+        return jwtAuthenticationConverter;
     }
 
     @Bean

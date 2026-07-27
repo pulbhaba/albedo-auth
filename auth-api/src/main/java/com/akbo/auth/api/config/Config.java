@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Clock;
+
 import javax.crypto.SecretKey;
 
 @Slf4j
@@ -29,5 +31,10 @@ public class Config {
     public SecretKey getSymmetricKey() {
         log.info("Symmetric key bean is creating.");
         return PasswordTools.getKeyFromPassword(encryptSecret, encryptSalt);
+    }
+
+    @Bean
+    public Clock clock() {
+        return Clock.systemUTC();
     }
 }
