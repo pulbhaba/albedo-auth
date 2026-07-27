@@ -149,7 +149,65 @@ class JwtFlowIntegrationTest {
                         get("/admin/promotions")
                                 .header("Authorization", "Bearer " + adminAccessToken)
                                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void roleUpdateRequestFlow_approvesEditorRoleAndEmitsRoleInNewToken() throws Exception {
+        UserDto admin = new UserDto();
+        admin.setUsername("roleadmin");
+        admin.setPassword("password");
+        admin.setEmailAddress("roleadmin@example.com");
+        admin.setRoles(Set.of(Role.ROLE_ADMIN));
+        userService.createUser(admin);
+
+        String userAccessToken = issueAccessToken("testuser");
+        MvcResult requestResult =
+                mockMvc.perform(
+                                post("/user/role-requests")
+                                        .header("Authorization", "Bearer " + userAccessToken)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .accept(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                """
+                                                {
+                                                  "requestedRole": "ROLE_EDITOR",
+                                                  "evidence": "Ready to publish reviewed novels."
+                                                }
+                                                """))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.username", equalTo("testuser")))
+                        .andExpect(jsonPath("$.requestedRole", equalTo("ROLE_EDITOR")))
+                        .andExpect(jsonPath("$.status", equalTo("PENDING")))
+                        .andReturn();
+
+        Map<String, Object> roleRequest =
+                objectMapper.readValue(requestResult.getResponse().getContentAsString(), Map.class);
+        Number requestId = (Number) roleRequest.get("id");
+        String adminAccessToken = issueAccessToken("roleadmin");
+
+        mockMvc.perform(
+                        get("/admin/promotions")
+                                .queryParam("status", "PENDING")
+                                .header("Authorization", "Bearer " + adminAccessToken)
+                                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))));
+
+        mockMvc.perform(
+                        post("/admin/promotions/{requestId}/approve", requestId.longValue())
+                                .header("Authorization", "Bearer " + adminAccessToken)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .content("{\"reason\":\"approved\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", equalTo("APPROVED")))
+                .andExpect(jsonPath("$.resolvedBy", equalTo("roleadmin")));
+
+        String refreshedUserAccessToken = issueAccessToken("testuser");
+        assertThat(
+                jwtDecoder.decode(refreshedUserAccessToken).getClaimAsStringList("roles"),
+                hasItem("ROLE_EDITOR"));
     }
 
     private String issueAccessToken(String username) throws Exception {
