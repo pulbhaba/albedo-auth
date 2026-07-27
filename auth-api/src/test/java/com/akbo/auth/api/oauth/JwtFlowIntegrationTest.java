@@ -73,4 +73,50 @@ class JwtFlowIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username", equalTo("testuser")));
     }
+
+    @Test
+    void logout_revokesAccessTokenAndRefreshToken() throws Exception {
+        MvcResult tokenResult =
+                mockMvc.perform(
+                                post("/oauth2/token")
+                                        .with(httpBasic("test-client", "test-secret"))
+                                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                                        .accept(MediaType.APPLICATION_JSON)
+                                        .param("grant_type", "password")
+                                        .param("username", "testuser")
+                                        .param("password", "password")
+                                        .param("scope", "read"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.access_token", not(emptyOrNullString())))
+                        .andExpect(jsonPath("$.refresh_token", not(emptyOrNullString())))
+                        .andReturn();
+
+        String responseContent = tokenResult.getResponse().getContentAsString();
+        Map<String, Object> responseMap = objectMapper.readValue(responseContent, Map.class);
+        String accessToken = (String) responseMap.get("access_token");
+        String refreshToken = (String) responseMap.get("refresh_token");
+
+        mockMvc.perform(
+                        post("/user/logout")
+                                .header("Authorization", "Bearer " + accessToken)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"refreshToken\":\"" + refreshToken + "\"}"))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(
+                        get("/user/testuser")
+                                .header("Authorization", "Bearer " + accessToken)
+                                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(
+                        post("/oauth2/token")
+                                .with(httpBasic("test-client", "test-secret"))
+                                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .param("grant_type", "refresh_token")
+                                .param("refresh_token", refreshToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", equalTo("invalid_grant")));
+    }
 }
