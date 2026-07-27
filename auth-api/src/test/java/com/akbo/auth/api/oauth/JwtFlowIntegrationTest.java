@@ -1,5 +1,6 @@
 package com.akbo.auth.api.oauth;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -33,6 +35,7 @@ class JwtFlowIntegrationTest {
     @Autowired MockMvc mockMvc;
     @Autowired UserService userService;
     @Autowired ObjectMapper objectMapper;
+    @Autowired JwtDecoder jwtDecoder;
 
     @BeforeEach
     void setUp() {
@@ -64,6 +67,9 @@ class JwtFlowIntegrationTest {
         String responseContent = tokenResult.getResponse().getContentAsString();
         Map<String, Object> responseMap = objectMapper.readValue(responseContent, Map.class);
         String accessToken = (String) responseMap.get("access_token");
+
+        assertThat(
+                jwtDecoder.decode(accessToken).getClaimAsStringList("roles"), hasItem("ROLE_USER"));
 
         // 2. Use the token to access a protected resource
         mockMvc.perform(
@@ -118,5 +124,51 @@ class JwtFlowIntegrationTest {
                                 .param("refresh_token", refreshToken))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error", equalTo("invalid_grant")));
+    }
+
+    @Test
+    void adminPaths_requireAdminRole() throws Exception {
+        String userAccessToken = issueAccessToken("testuser");
+
+        mockMvc.perform(
+                        get("/admin/promotions")
+                                .header("Authorization", "Bearer " + userAccessToken)
+                                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+
+        UserDto admin = new UserDto();
+        admin.setUsername("admin");
+        admin.setPassword("password");
+        admin.setEmailAddress("admin@example.com");
+        admin.setRoles(Set.of(Role.ROLE_ADMIN));
+        userService.createUser(admin);
+
+        String adminAccessToken = issueAccessToken("admin");
+
+        mockMvc.perform(
+                        get("/admin/promotions")
+                                .header("Authorization", "Bearer " + adminAccessToken)
+                                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    private String issueAccessToken(String username) throws Exception {
+        MvcResult tokenResult =
+                mockMvc.perform(
+                                post("/oauth2/token")
+                                        .with(httpBasic("test-client", "test-secret"))
+                                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                                        .accept(MediaType.APPLICATION_JSON)
+                                        .param("grant_type", "password")
+                                        .param("username", username)
+                                        .param("password", "password")
+                                        .param("scope", "read"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.access_token", not(emptyOrNullString())))
+                        .andReturn();
+
+        String responseContent = tokenResult.getResponse().getContentAsString();
+        Map<String, Object> responseMap = objectMapper.readValue(responseContent, Map.class);
+        return (String) responseMap.get("access_token");
     }
 }

@@ -5,6 +5,7 @@ import lombok.Getter;
 @Getter
 public enum Role {
     ROLE_ADMIN("ROLE_ADMIN", "Managing user registration/removal"),
+    ROLE_EDITOR("ROLE_EDITOR", "Publishing approved novels"),
     ROLE_POWER_USER("ROLE_POWER_USER", "Additional access layer"),
     ROLE_USER("ROLE_USER", "Accessing own information");
 

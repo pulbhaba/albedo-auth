@@ -4,6 +4,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.*;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
@@ -86,6 +87,11 @@ public class OAuth2PasswordAuthenticationProvider implements AuthenticationProvi
                 issuedAt.plus(registeredClient.getTokenSettings().getAccessTokenTimeToLive());
 
         String scopeValue = String.join(" ", authorizedScopes);
+        List<String> roles =
+                userAuth.getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .sorted()
+                        .toList();
         AuthorizationServerSettings as = this.authorizationServerSettings;
         String issuer = as != null ? as.getIssuer() : null;
 
@@ -98,6 +104,7 @@ public class OAuth2PasswordAuthenticationProvider implements AuthenticationProvi
                         .expiresAt(expiresAt)
                         .claim(OAuth2ParameterNames.SCOPE, scopeValue)
                         .claim("client_id", registeredClient.getClientId())
+                        .claim("roles", roles)
                         .id(UUID.randomUUID().toString())
                         .build();
 
