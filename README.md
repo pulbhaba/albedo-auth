@@ -66,6 +66,18 @@ From the project root, run the API app:
 
 The application starts by default on `http://localhost:8080`.
 
+For the shared MySQL and auth-api Docker Compose stack, use the
+[`albedo-infrastructure`](https://github.com/pulbhaba/albedo-infrastructure)
+repository. From the workspace root, start it with:
+
+```
+cd infrastructure
+docker compose up -d
+```
+
+The infrastructure compose file builds auth-api from the sibling
+`backend/auth` checkout.
+
 On startup, roles from `auth-client`'s `Role` enum are inserted via a `CommandLineRunner` (`AuthApplication`).
 
 ## Configuration
