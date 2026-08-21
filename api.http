@@ -10,7 +10,7 @@ Content-Type: application/json
 
 {
   "username": "new_user",
-  "password": "changeme",
+  "password": "StrongPassword1!",
   "firstName": "New",
   "lastName": "User",
   "emailAddress": "new.user@example.com",
@@ -32,7 +32,7 @@ Content-Type: application/json
 
 {
   "requestKey": "6/r6Y8XQNs+Ob3dDQc+FdyuFRzfeYD6cfjcjKXkFb1s=",
-  "newPassword": "changed"
+  "newPassword": "ChangedPassword1!"
 }
 
 ###
@@ -45,7 +45,7 @@ grant_type = client_credentials
 
 ###
 # Obtain access token via Password Grant (Resource Owner Password Credentials)
-# Note: Replace 'new_user' and 'changed' with valid username/password from your system
+# Note: Replace 'new_user' and 'ChangedPassword1!' with valid credentials from your system
 # The user must be registered first using the registration endpoint above
 POST http://localhost:8080/oauth2/token
 Content-Type: application/x-www-form-urlencoded
@@ -53,7 +53,7 @@ Authorization: basic YWxiZWRvLWNsaWVudDphbGJlZG8tc2VjcmV0
 
 grant_type = password &
 username = new_user &
-password = changeme &
+password = StrongPassword1! &
 scope = openid profile read
 
 ###

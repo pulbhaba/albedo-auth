@@ -41,7 +41,7 @@ class JwtFlowIntegrationTest {
     void setUp() {
         UserDto user = new UserDto();
         user.setUsername("testuser");
-        user.setPassword("password");
+        user.setPassword("AdminPassword1!");
         user.setEmailAddress("test@example.com");
         user.setRoles(Set.of(Role.ROLE_USER));
         userService.createUser(user);
@@ -58,7 +58,7 @@ class JwtFlowIntegrationTest {
                                         .accept(MediaType.APPLICATION_JSON)
                                         .param("grant_type", "password")
                                         .param("username", "testuser")
-                                        .param("password", "password")
+                                        .param("password", "AdminPassword1!")
                                         .param("scope", "read"))
                         .andExpect(status().isOk())
                         .andExpect(jsonPath("$.access_token", not(emptyOrNullString())))
@@ -90,7 +90,7 @@ class JwtFlowIntegrationTest {
                                         .accept(MediaType.APPLICATION_JSON)
                                         .param("grant_type", "password")
                                         .param("username", "testuser")
-                                        .param("password", "password")
+                                        .param("password", "AdminPassword1!")
                                         .param("scope", "read"))
                         .andExpect(status().isOk())
                         .andExpect(jsonPath("$.access_token", not(emptyOrNullString())))
@@ -138,7 +138,7 @@ class JwtFlowIntegrationTest {
 
         UserDto admin = new UserDto();
         admin.setUsername("admin");
-        admin.setPassword("password");
+        admin.setPassword("AdminPassword1!");
         admin.setEmailAddress("admin@example.com");
         admin.setRoles(Set.of(Role.ROLE_ADMIN));
         userService.createUser(admin);
@@ -156,7 +156,7 @@ class JwtFlowIntegrationTest {
     void roleUpdateRequestFlow_approvesEditorRoleAndEmitsRoleInNewToken() throws Exception {
         UserDto admin = new UserDto();
         admin.setUsername("roleadmin");
-        admin.setPassword("password");
+        admin.setPassword("AdminPassword1!");
         admin.setEmailAddress("roleadmin@example.com");
         admin.setRoles(Set.of(Role.ROLE_ADMIN));
         userService.createUser(admin);
@@ -219,7 +219,7 @@ class JwtFlowIntegrationTest {
                                         .accept(MediaType.APPLICATION_JSON)
                                         .param("grant_type", "password")
                                         .param("username", username)
-                                        .param("password", "password")
+                                        .param("password", "AdminPassword1!")
                                         .param("scope", "read"))
                         .andExpect(status().isOk())
                         .andExpect(jsonPath("$.access_token", not(emptyOrNullString())))

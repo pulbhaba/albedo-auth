@@ -70,8 +70,7 @@ Creates a new user using the supplied profile data.
   persistence).
 - **Success response:** `200 OK` with the stored `UserDto`. Existing users (matched by `id` or `username`) are returned
   unchanged.
-- **Failure behaviour:** If the payload omits required fields such as `roles` or `password`, a persistence error is
-  thrown. Validation will be added in future iterations.
+- **Failure behaviour:** Weak passwords are rejected with `400 Bad Request` before persistence.
 
 Example request:
 
@@ -162,6 +161,8 @@ Together, these steps cover user provisioning, secure password establishment, an
 
 ## Validation Rules and Constraints
 
+- **Password strength:** Registration and password reset passwords must be at least 12 characters long and contain an
+  uppercase letter, a lowercase letter, a digit, and a special character. Whitespace is not allowed.
 - **Unique username:** Enforced at the database level (`users.username` unique constraint) and honoured by
   `UserServiceImpl`.
 - **Password reset token:** The combination of request ID and random string must match an unexpired row in

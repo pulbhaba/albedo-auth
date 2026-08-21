@@ -5,6 +5,7 @@ import com.akbo.auth.dao.entity.User;
 import com.akbo.auth.dao.entity.UserRole;
 import com.akbo.auth.dao.repository.UserRepository;
 import com.akbo.auth.dto.UserDto;
+import com.akbo.auth.util.PasswordPolicy;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,6 +26,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto createUser(final UserDto user) {
+        PasswordPolicy.validate(user.getPassword());
         final User existingUser;
         // early exit
         if (Objects.nonNull(user.getId()))

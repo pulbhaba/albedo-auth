@@ -114,6 +114,11 @@ Notifications (Password Reset):
 - Spring Mail properties are present but commented; configure `spring.mail.*` and set `notification.email.enabled=true`
   to send emails.
 
+Password policy:
+
+- Registration and password reset require at least 12 characters, including an uppercase letter, a lowercase letter,
+  a digit, and a special character. Whitespace is not allowed. Weak passwords receive a `400 Bad Request` response.
+
 Actuator:
 
 - `management.endpoints.web.exposure.include=mappings` (exposes mappings endpoint)
