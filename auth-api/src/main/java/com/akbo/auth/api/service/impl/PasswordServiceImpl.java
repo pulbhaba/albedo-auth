@@ -7,6 +7,7 @@ import com.akbo.auth.dao.repository.PasswordResetRequestRepository;
 import com.akbo.auth.dao.repository.UserRepository;
 import com.akbo.auth.dto.PasswordChangeDto;
 import com.akbo.auth.exception.UnauthorizedException;
+import com.akbo.auth.util.PasswordPolicy;
 import com.akbo.auth.util.PasswordTools;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
@@ -38,6 +39,7 @@ public class PasswordServiceImpl implements PasswordService {
 
     @Override
     public Map<String, String> changePassword(final PasswordChangeDto request) {
+        PasswordPolicy.validate(request.getNewPassword());
         final String requestIdWithStr =
                 PasswordTools.decrypt(PasswordTools.urlAlgorithm, request.getRequestKey(), symKey);
         final String[] idAndString = requestIdWithStr.split("\\|");

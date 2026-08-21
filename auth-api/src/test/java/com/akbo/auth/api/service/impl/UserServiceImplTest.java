@@ -7,6 +7,7 @@ import com.akbo.auth.dao.entity.User;
 import com.akbo.auth.dao.repository.UserRepository;
 import com.akbo.auth.dto.Role;
 import com.akbo.auth.dto.UserDto;
+import com.akbo.auth.exception.BadRequestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,7 +45,7 @@ class UserServiceImplTest {
 
         userDto = new UserDto();
         userDto.setUsername("testuser");
-        userDto.setPassword("password");
+        userDto.setPassword("ValidPassword1!");
         userDto.setRoles(Set.of(Role.ROLE_USER));
     }
 
@@ -59,6 +60,14 @@ class UserServiceImplTest {
         assertNotNull(created);
         assertEquals(userDto.getUsername(), created.getUsername());
         verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void createUser_weakPassword_isRejected() {
+        userDto.setPassword("weak");
+
+        assertThrows(BadRequestException.class, () -> userService.createUser(userDto));
+        verifyNoInteractions(userRepository, passwordEncoder);
     }
 
     @Test

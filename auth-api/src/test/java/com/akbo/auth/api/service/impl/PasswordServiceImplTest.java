@@ -9,6 +9,7 @@ import com.akbo.auth.dao.entity.User;
 import com.akbo.auth.dao.repository.PasswordResetRequestRepository;
 import com.akbo.auth.dao.repository.UserRepository;
 import com.akbo.auth.dto.PasswordChangeDto;
+import com.akbo.auth.exception.BadRequestException;
 import com.akbo.auth.exception.UnauthorizedException;
 import com.akbo.auth.util.PasswordTools;
 import org.junit.jupiter.api.BeforeEach;
@@ -74,7 +75,7 @@ class PasswordServiceImplTest {
     @Test
     void changePassword_success() {
         PasswordChangeDto requestDto = new PasswordChangeDto();
-        requestDto.setNewPassword("newPass");
+        requestDto.setNewPassword("NewPassword1!");
 
         String randomString = "RANDOM123456789012";
         Long requestId = 100L;
@@ -92,7 +93,7 @@ class PasswordServiceImplTest {
         when(passwordResetRequestRepository.findOneByIdAndRandomStringNotExpired(
                         requestId, randomString))
                 .thenReturn(Optional.of(resetRequest));
-        when(passwordEncoder.encode("newPass")).thenReturn("encodedNewPass");
+        when(passwordEncoder.encode("NewPassword1!")).thenReturn("encodedNewPass");
         when(userRepository.save(user)).thenReturn(user);
 
         Map<String, String> result = passwordService.changePassword(requestDto);
@@ -107,7 +108,7 @@ class PasswordServiceImplTest {
     @Test
     void changePassword_expired() {
         PasswordChangeDto requestDto = new PasswordChangeDto();
-        requestDto.setNewPassword("newPass");
+        requestDto.setNewPassword("NewPassword1!");
 
         String randomString = "RANDOM123456789012";
         Long requestId = 100L;
@@ -128,6 +129,7 @@ class PasswordServiceImplTest {
     @Test
     void changePassword_invalidRequest() {
         PasswordChangeDto requestDto = new PasswordChangeDto();
+        requestDto.setNewPassword("NewPassword1!");
         requestDto.setRequestKey(
                 PasswordTools.encrypt(PasswordTools.urlAlgorithm, "1|wrong", symKey));
 
@@ -135,5 +137,14 @@ class PasswordServiceImplTest {
                 .thenReturn(Optional.empty());
 
         assertThrows(UnauthorizedException.class, () -> passwordService.changePassword(requestDto));
+    }
+
+    @Test
+    void changePassword_weakPassword_isRejectedBeforeTokenLookup() {
+        PasswordChangeDto requestDto = new PasswordChangeDto();
+        requestDto.setNewPassword("weak");
+
+        assertThrows(BadRequestException.class, () -> passwordService.changePassword(requestDto));
+        verifyNoInteractions(passwordResetRequestRepository, userRepository, passwordEncoder);
     }
 }
