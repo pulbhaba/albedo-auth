@@ -8,6 +8,7 @@ import org.hibernate.envers.Audited;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,7 +30,9 @@ public class User extends AbstractEntity implements UserDetails, OAuth2User {
     private Boolean enabled = true;
     private Boolean accountNonExpired = true;
     private Boolean credentialsNonExpired = true;
-    private Boolean accountNonLocked = true;
+    @Getter private Boolean accountNonLocked = true;
+    @Getter private int failedLoginAttempts;
+    @Getter private LocalDateTime lockedUntil;
 
     @Getter
     @ManyToMany(fetch = FetchType.EAGER)
@@ -58,7 +61,8 @@ public class User extends AbstractEntity implements UserDetails, OAuth2User {
 
     @Override
     public boolean isAccountNonLocked() {
-        return accountNonLocked;
+        return accountNonLocked
+                || (lockedUntil != null && !lockedUntil.isAfter(LocalDateTime.now()));
     }
 
     @Override
