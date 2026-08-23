@@ -119,6 +119,14 @@ Password policy:
 - Registration and password reset require at least 12 characters, including an uppercase letter, a lowercase letter,
   a digit, and a special character. Whitespace is not allowed. Weak passwords receive a `400 Bad Request` response.
 
+Public endpoint rate limiting:
+
+- Registration and password-reset initiation are limited per client IP to 5 requests per minute by default. Exceeded
+  limits return `429 Too Many Requests` with a `Retry-After` header and a generic error message.
+- Configure the limit with `APP_AUTH_RATE_LIMIT_MAX_REQUESTS` and `APP_AUTH_RATE_LIMIT_WINDOW` (an ISO-8601 duration,
+  such as `PT1M`). Limits are in-memory and reset when the application restarts; deployments with multiple instances
+  should use a shared edge/API gateway limiter for cluster-wide enforcement.
+
 Actuator:
 
 - `management.endpoints.web.exposure.include=mappings` (exposes mappings endpoint)

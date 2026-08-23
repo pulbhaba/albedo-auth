@@ -31,7 +31,7 @@ import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
-@EnableConfigurationProperties(SocialLoginProperties.class)
+@EnableConfigurationProperties({SocialLoginProperties.class, RateLimitProperties.class})
 public class BasicAuthWebSecurityConfiguration {
 
     private final SocialLoginProperties socialLoginProperties;
