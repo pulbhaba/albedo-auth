@@ -127,6 +127,13 @@ Public endpoint rate limiting:
   such as `PT1M`). Limits are in-memory and reset when the application restarts; deployments with multiple instances
   should use a shared edge/API gateway limiter for cluster-wide enforcement.
 
+Account lockout:
+
+- Failed Basic authentication attempts are tracked per user. After 5 failures, the account is locked for 15 minutes.
+- A successful login resets the failure count. An expired lockout is cleared on the next authentication attempt.
+- Configure the threshold with `APP_AUTH_ACCOUNT_LOCKOUT_MAX_FAILED_ATTEMPTS` and duration with
+  `APP_AUTH_ACCOUNT_LOCKOUT_DURATION` (ISO-8601 duration, such as `PT15M`).
+
 Actuator:
 
 - `management.endpoints.web.exposure.include=mappings` (exposes mappings endpoint)
